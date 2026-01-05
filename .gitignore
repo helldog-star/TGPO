@@ -1,0 +1,5 @@
+checkpoints/
+eval_results/
+checkpoints_main/
+exp_scripts_qwen2d5_math_zw/
+data/*.parquet

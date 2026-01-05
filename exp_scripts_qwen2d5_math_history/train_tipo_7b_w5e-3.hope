@@ -1,0 +1,32 @@
+[resource]
+usergroup = hadoop-aipnlp
+queue = root.shxs_training_cluster.hadoop-aipnlp.h800_fmg_exp
+
+[base]
+type = ml-easy-job
+
+[roles]
+workers = 1
+worker.memory = 1000000
+worker.vcore = 80
+worker.gcoresh800-141g = 8
+worker.ports = 1
+worker.script = sh train_tipo_7b_w5e-3.sh
+
+
+[docker]
+afo.docker.image.name = registry-offlinebiz.sankuai.com/custom_prod/com.sankuai.phxmlp.mtjupyter.singleuser/aipnlp_training_cuda12.6_py310_glic2.32_torch2.7.1_fla2.8.3_vllm0.10.0_sglang_0.4.10_stable_1.0.0_c95a1472
+afo.app.yarn.allocate.timeout.seconds = 315360000
+afo.app.am.resource.mb = 4096
+
+[others]
+afo.role.worker.task.attempt.max.retry = 1
+afo.dolphinfs.otherusers = hadoop-aipnlp,hadoop-hldy-nlp,hadoop-nlp-sh02
+afo.app.env.YARN_CONTAINER_RUNTIME_DOCKER_SHM_SIZE_BYTES = 343597383680
+afo.app.env.CUDA_DEVICE_MAX_CONNECTIONS = 1
+afo.app.env.NCCL_DEBUG = INFO
+afo.app.env.NCCL_TIMEOUT = 600
+afo.app.env.CUDA_VISIBLE_DEVICES = 0,1,2,3,4,5,6,7
+afo.use.acceleration.submission = true
+hope.resource.experiment = fmg_h800_ci
+client.git.repo.dirty = true
