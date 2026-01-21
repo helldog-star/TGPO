@@ -3,7 +3,7 @@
 # Conda环境配置
 CONDA_SH_PATH="/mnt/zhaorunsong/anaconda3/etc/profile.d/conda.sh"  # Conda初始化脚本路径
 CONDA_ENV_NAME="tgpo"  # Conda环境名称
-BASE_DIR="/tmp/hx/models"
+BASE_DIR="/tmp/hx/tgpo"
 
 source $CONDA_SH_PATH
 conda activate $CONDA_ENV_NAME
