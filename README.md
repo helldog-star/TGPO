@@ -12,7 +12,7 @@ cd outlines
 git checkout 0.0.46
 pip install .
 cd ../TGPO/luffy
-pip install -r requirements.txt
+pip install -r requirements.v2.txt
 pip install -e .
 cd verl
 pip install -e .
