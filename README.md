@@ -7,7 +7,7 @@ You can install dependencies by running the following commands:
 conda create -n tgpo python=3.10
 conda activate tgpo
 pip install airports-py
-git clone https://github.com/dottxt-ai/outlines.
+git clone https://github.com/dottxt-ai/outlines
 cd outlines
 git checkout 0.0.46
 pip install .
@@ -30,9 +30,9 @@ pip install flash_attn-2.7.3+cu12torch2.4cxx11abiFALSE-cp310-cp310-linux_x86_64.
 
 This repository includes:
 
-- `luffy`: Codes for training LUFFY using off-policy reasoning traces. Our main code changes are in luffy/verl/verl/mix_src.
+- `luffy`: Codes for training on-policy or mixed-policy (using off-policy reasoning traces) or on-policy distill models. Our main code changes are in luffy/verl/verl/mix_src.
 - `data`: Data and code for training and evaluating LUFFY. 
-- `exp_scripts`: Example script to train LUFFY.
+- `exp_scripts`: Example script to train models.
 - `eval_scripts`: Evaluation scripts on math and out-of-distribution benchmarks.
 - `ExGRPO`: Implementation and notes for ExGRPO, which leverages off-policy experience replay to further boost performance without external guidance.
 
@@ -43,7 +43,7 @@ This repository includes:
 # 🔧Usage
 
 ## Model and Dataset Preparation
-确认 data/download.sh 和 data/my_prepare_train.sh 中的 CONDA_SH_PATH CONDA_ENV_NAME BASE_DIR 即可
+确认 data/download.sh 和 data/my_prepare_train.sh 中的 CONDA_SH_PATH / CONDA_ENV_NAME / BASE_DIR 即可
 ```bath
 cd data
 bash download.sh

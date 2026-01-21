@@ -15,13 +15,15 @@ LOG_FILE="./prepare_train_vllm_server.log"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 OUTPUT_DIR="${OUTPUT_DIR:-$SCRIPT_DIR}"
 DATASET_PATH="${DATASET_PATH:-$BASE_DIR/datasets/Openr1-Math-46k-8192}"
+OUTPUT_PARQUET_PATH_ORI="$OUTPUT_DIR/openr1.parquet"
 OUTPUT_PARQUET_PATH="$OUTPUT_DIR/openr1.tgpo.parquet"
 TEMP_CACHE_JSON_PATH="$OUTPUT_DIR/openr1_tgpo_cache.json"
 VLLM_BASE_URL="${VLLM_BASE_URL:-http://localhost:8000/v1}"
 MAX_WORKERS="${MAX_WORKERS:-32}"
 BATCH_SIZE="${BATCH_SIZE:-16}"
 
-mkdir -p "$OUTPUT_DIR"
+echo "🚀 数据预处理..."
+python prepare_train.py --dataset $DATASET_PATH --output $OUTPUT_PARQUET_PATH_ORI
 
 echo "🚀 正在启动 vLLM 服务..."
 
@@ -58,7 +60,7 @@ done
 # 5. 运行 Python 数据处理脚本（vLLM 采样）
 echo "🐍 开始运行 Python 处理脚本（vLLM 采样）..."
 python "$SCRIPT_DIR/my_prepare_train.py" \
-    --dataset-path "$DATASET_PATH" \
+    --dataset-path "$OUTPUT_PARQUET_PATH_ORI" \
     --model-local-path "$MODEL_PATH" \
     --output-parquet-path "$OUTPUT_PARQUET_PATH" \
     --temp-cache-json-path "$TEMP_CACHE_JSON_PATH" \
