@@ -1,42 +1,36 @@
 import os
 import time
 import json
+import argparse
 import pandas as pd
 from datasets import load_from_disk
 from transformers import AutoTokenizer
 from concurrent.futures import ThreadPoolExecutor
 from openai import OpenAI, APIError
 
-# --- 配置 ---
-DATASET_PATH = "/mnt/dolphinfs/ssd_pool/docker/user/hadoop-nlp-sh02/hadoop-aipnlp/FMG/liuxinyu67/datasets/Openr1-Math-46k-8192"
-# 这里的 MODEL_NAME 主要用于 tokenizer 加载，API 调用时我们会自动获取服务端的模型名
-MODEL_LOCAL_PATH = "/mnt/dolphinfs/ssd_pool/docker/user/hadoop-nlp-sh02/hadoop-aipnlp/FMG/liuxinyu67/models/Qwen3-30B-A3B-Thinking-2507"
-OUTPUT_PARQUET_PATH = "/mnt/dolphinfs/ssd_pool/docker/user/hadoop-nlp-sh02/hadoop-aipnlp/FMG/liuxinyu67/luffy/data/openr1.mipo.parquet"
-TEMP_CACHE_JSON_PATH = "/mnt/dolphinfs/ssd_pool/docker/user/hadoop-nlp-sh02/hadoop-aipnlp/FMG/liuxinyu67/luffy/data/openr1_mipo_cache.json"
+# 以下由 parse_args() 及 __main__ 赋值，供后续函数使用
+DATASET_PATH = None
+MODEL_LOCAL_PATH = None
+OUTPUT_PARQUET_PATH = None
+TEMP_CACHE_JSON_PATH = None
+VLLM_BASE_URL = None
+MAX_WORKERS = None
+BATCH_SIZE = None
+tokenizer = None
+client = None
+SERVING_MODEL_NAME = None
 
-# vLLM 服务地址
-VLLM_BASE_URL = "http://localhost:8000/v1"
-MAX_WORKERS = 32  # 线程数
-BATCH_SIZE = 16   # 批处理大小
 
-# --- 初始化 ---
-print("正在加载 Tokenizer...")
-tokenizer = AutoTokenizer.from_pretrained(MODEL_LOCAL_PATH, padding_side="left")
-
-# 初始化 OpenAI 客户端
-client = OpenAI(
-    base_url=VLLM_BASE_URL,
-    api_key="EMPTY",  # vLLM 不需要 key，但 SDK 需要占位符
-)
-
-# 获取服务端正在运行的模型名称（防止硬编码出错）
-try:
-    models_list = client.models.list()
-    SERVING_MODEL_NAME = models_list.data[0].id
-    print(f"✅ 连接成功，服务端模型名称: {SERVING_MODEL_NAME}")
-except Exception as e:
-    print(f"❌ 无法连接到 vLLM 服务，请检查服务是否启动: {e}")
-    exit(1)
+def parse_args():
+    parser = argparse.ArgumentParser(description="OpenR1-Math 数据准备：经 vLLM 推理后生成训练用 Parquet")
+    parser.add_argument("--dataset-path", required=True, help="load_from_disk 用的数据集目录路径")
+    parser.add_argument("--model-local-path", required=True, help="本地模型路径，用于加载 Tokenizer")
+    parser.add_argument("--output-parquet-path", required=True, help="最终输出 Parquet 文件路径")
+    parser.add_argument("--temp-cache-json-path", required=True, help="断点续传缓存 JSON 路径")
+    parser.add_argument("--vllm-base-url", default="http://localhost:8000/v1", help="vLLM OpenAI 兼容接口地址")
+    parser.add_argument("--max-workers", type=int, default=32, help="推理线程数")
+    parser.add_argument("--batch-size", type=int, default=16, help="每批推理样本数")
+    return parser.parse_args()
 
 # --- 断点续传和缓存逻辑 ---
 def load_cache():
@@ -102,6 +96,14 @@ def call_vllm_api(batch_prompts, indices):
 
 # --- 主执行逻辑 ---
 def main():
+    # 确保输出目录存在
+    d = os.path.dirname(OUTPUT_PARQUET_PATH)
+    if d:
+        os.makedirs(d, exist_ok=True)
+    d = os.path.dirname(TEMP_CACHE_JSON_PATH)
+    if d:
+        os.makedirs(d, exist_ok=True)
+
     # 1. 加载数据集
     print(f"正在加载数据集: {DATASET_PATH}")
     ds_full = load_from_disk(DATASET_PATH)
@@ -201,5 +203,25 @@ def finalize_results(ds_full, results_cache, total_samples):
 
 
 if __name__ == "__main__":
+    args = parse_args()
+    DATASET_PATH = args.dataset_path
+    MODEL_LOCAL_PATH = args.model_local_path
+    OUTPUT_PARQUET_PATH = args.output_parquet_path
+    TEMP_CACHE_JSON_PATH = args.temp_cache_json_path
+    VLLM_BASE_URL = args.vllm_base_url
+    MAX_WORKERS = args.max_workers
+    BATCH_SIZE = args.batch_size
+
+    print("正在加载 Tokenizer...")
+    tokenizer = AutoTokenizer.from_pretrained(MODEL_LOCAL_PATH, padding_side="left")
+    client = OpenAI(base_url=VLLM_BASE_URL, api_key="EMPTY")
+    try:
+        models_list = client.models.list()
+        SERVING_MODEL_NAME = models_list.data[0].id
+        print(f"✅ 连接成功，服务端模型名称: {SERVING_MODEL_NAME}")
+    except Exception as e:
+        print(f"❌ 无法连接到 vLLM 服务，请检查服务是否启动: {e}")
+        exit(1)
+
     start_time = time.time()
     main()

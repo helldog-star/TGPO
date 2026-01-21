@@ -1,20 +1,19 @@
-import pyarrow.parquet as pq
-import pyarrow as pa
-import pandas as pd
-import numpy as np
-from math_verify import parse, verify
-from tqdm import tqdm
+import argparse
 import os
 
-# --- 配置 ---
-FILE_PATH = '/mnt/dolphinfs/ssd_pool/docker/user/hadoop-nlp-sh02/hadoop-aipnlp/FMG/liuxinyu67/luffy/data/openr1.mipo.parquet'
-# 输出文件路径自动生成
-DIR_NAME = os.path.dirname(FILE_PATH)
-BASE_NAME = os.path.splitext(os.path.basename(FILE_PATH))[0]
-CORRECT_FILE = os.path.join(DIR_NAME, f"{BASE_NAME}_correct.parquet")
-WRONG_FILE = os.path.join(DIR_NAME, f"{BASE_NAME}_wrong.parquet")
+import numpy as np
+import pandas as pd
+import pyarrow as pa
+import pyarrow.parquet as pq
+from math_verify import parse, verify
+from tqdm import tqdm
 
 BATCH_SIZE = 1024
+
+def parse_args():
+    p = argparse.ArgumentParser(description="对采样结果 parquet 做数学答案验证，输出 _correct / _wrong")
+    p.add_argument("--input", required=True, help="输入 parquet 路径（vLLM 采样结果）")
+    return p.parse_args()
 
 def process_batch(df_batch):
     """
@@ -64,12 +63,19 @@ def process_batch(df_batch):
     return validation_results, extracted_preds
 
 def main():
-    print(f"🚀 开始处理文件: {FILE_PATH}")
-    print(f"📂 正确样本将保存至: {CORRECT_FILE}")
-    print(f"📂 错误样本将保存至: {WRONG_FILE}")
-    
+    args = parse_args()
+    file_path = args.input
+    dir_name = os.path.dirname(file_path)
+    base_name = os.path.splitext(os.path.basename(file_path))[0]
+    correct_file = os.path.join(dir_name, f"{base_name}_correct.parquet")
+    wrong_file = os.path.join(dir_name, f"{base_name}_wrong.parquet")
+
+    print(f"🚀 开始处理文件: {file_path}")
+    print(f"📂 正确样本将保存至: {correct_file}")
+    print(f"📂 错误样本将保存至: {wrong_file}")
+
     try:
-        parquet_file = pq.ParquetFile(FILE_PATH)
+        parquet_file = pq.ParquetFile(file_path)
         total_rows = parquet_file.metadata.num_rows
         
         # 初始化统计
@@ -99,15 +105,14 @@ def main():
                 if not df_correct.empty:
                     table_correct = pa.Table.from_pandas(df_correct)
                     if writer_correct is None:
-                        # 第一次写入时初始化 Writer，使用推断出的 schema
-                        writer_correct = pq.ParquetWriter(CORRECT_FILE, table_correct.schema)
+                        writer_correct = pq.ParquetWriter(correct_file, table_correct.schema)
                     writer_correct.write_table(table_correct)
-                
+
                 # 5. 写入 Wrong 文件
                 if not df_wrong.empty:
                     table_wrong = pa.Table.from_pandas(df_wrong)
                     if writer_wrong is None:
-                        writer_wrong = pq.ParquetWriter(WRONG_FILE, table_wrong.schema)
+                        writer_wrong = pq.ParquetWriter(wrong_file, table_wrong.schema)
                     writer_wrong.write_table(table_wrong)
                 
                 # 6. 更新统计
@@ -125,15 +130,15 @@ def main():
         if writer_wrong: writer_wrong.close()
 
         # 最终报告
-        print("\n" + "="*30)
+        print("\n" + "=" * 30)
         print("✅ 处理完成")
-        print("="*30)
+        print("=" * 30)
         print(f"总样本数 : {total_count}")
-        print(f"正确样本 : {correct_count} -> 已保存至 {os.path.basename(CORRECT_FILE)}")
-        print(f"错误样本 : {total_count - correct_count} -> 已保存至 {os.path.basename(WRONG_FILE)}")
+        print(f"正确样本 : {correct_count} -> 已保存至 {os.path.basename(correct_file)}")
+        print(f"错误样本 : {total_count - correct_count} -> 已保存至 {os.path.basename(wrong_file)}")
         if total_count > 0:
             print(f"最终准确率: {correct_count / total_count:.4f} ({correct_count / total_count:.2%})")
-        print("="*30)
+        print("=" * 30)
 
     except Exception as e:
         print(f"❌ 发生错误: {e}")

@@ -1,8 +1,5 @@
 import pyarrow.parquet as pq
 
-# file_path = '/mnt/dolphinfs/hdd_pool/docker/user/hadoop-aipnlp/FMG/liuxinyu67/LUFFY/data/openr1.a3b_correct_35k.parquet'
-# file_path = '/mnt/dolphinfs/hdd_pool/docker/user/hadoop-aipnlp/FMG/liuxinyu67/LUFFY/data/openr1.parquet'
-# file_path = '/mnt/dolphinfs/hdd_pool/docker/user/hadoop-aipnlp/FMG/liuxinyu67/LUFFY/data/openr1.a3b_correct_35k_nothink.parquet'
 file_path = "/Users/liuxinyu/Desktop/yuyucodebox/luffy/data/openr1.a3b_correct_35k.parquet"
 
 try:

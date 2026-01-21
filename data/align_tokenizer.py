@@ -1,13 +1,32 @@
-import torch
-from transformers import AutoTokenizer, AutoModelForCausalLM, AutoConfig
-import json
+import argparse
 import os
+
+import torch
+from transformers import AutoModelForCausalLM, AutoTokenizer
+
+
+def add_think_after_assistant_in_chat_template(tokenizer) -> None:
+    """
+    在 chat_template 的 add_generation_prompt 块中，在 assistant 后加上 \\n<think>\\n，
+    使 apply_chat_template(..., add_generation_prompt=True) 得到以 <think>\\n 结尾的 prompt。
+    仅修改最后一处 >assistant\\n（即 add_generation_prompt 块），不改历史对话中的 assistant。
+    """
+    t = tokenizer.chat_template
+    if t is None or not isinstance(t, str):
+        return
+    idx = t.rfind(">assistant\n")
+    if idx != -1:
+        tokenizer.chat_template = (
+            t[: idx + len(">assistant\n")] + "<think>\n" + t[idx + len(">assistant\n") :]
+        )
+
 
 def unify_vocab_to_tokenizer_max(
     student_model_path: str,
     teacher_model_path: str,
     output_dir: str = None,
-    unify_special_tokens: bool = True
+    unify_special_tokens: bool = True,
+    add_think_to_chat_template: bool = False,
 ):
     """
     统一 Student 和 Teacher 的词表大小到 tokenizer 的最大值，并统一特殊 token
@@ -23,6 +42,7 @@ def unify_vocab_to_tokenizer_max(
         teacher_model_path: Teacher 模型路径
         output_dir: 输出目录（如果为 None，则在原路径后添加 -aligned）
         unify_special_tokens: 是否统一特殊 token（EOS, PAD, BOS, UNK）
+        add_think_to_chat_template: 是否在 student 的 chat_template 中 add_generation_prompt 的 assistant 后加 <think>\\n
     """
     
     print("=" * 80)
@@ -116,10 +136,14 @@ def unify_vocab_to_tokenizer_max(
     # ========== 第七步：保存 ==========
     if output_dir is None:
         output_student = student_model_path + "-aligned"
-        output_teacher = teacher_model_path + "-aligned-"
+        output_teacher = teacher_model_path + "-aligned"
     else:
         output_student = os.path.join(output_dir, "student-aligned")
         output_teacher = os.path.join(output_dir, "teacher-aligned")
+
+    if add_think_to_chat_template:
+        print(f"\n🔧 在 Student chat_template 的 assistant 后添加 <think>\\n ...")
+        add_think_after_assistant_in_chat_template(student_tokenizer)
     
     print(f"\n💾 保存模型...")
     os.makedirs(output_student, exist_ok=True)
@@ -223,11 +247,23 @@ def _unify_special_tokens(
     print(f"\n  ✅ 特殊 Token 统一完成")
 
 
-# 使用
 if __name__ == "__main__":
-    output_student, output_teacher = unify_vocab_to_tokenizer_max(
-        # student_model_path="/mnt/dolphinfs/hdd_pool/docker/user/hadoop-aipnlp/FMG/liuxinyu67/models/Qwen2.5-Math-7B",
-        student_model_path="/mnt/dolphinfs/hdd_pool/docker/user/hadoop-aipnlp/FMG/liuxinyu67/models/Qwen2.5-Math-1.5B",
-        teacher_model_path="/mnt/dolphinfs/hdd_pool/docker/user/hadoop-aipnlp/FMG/liuxinyu67/models/Qwen3-30B-A3B-Thinking-2507",
-        unify_special_tokens=True  # ✅ 启用特殊 token 统一
+    parser = argparse.ArgumentParser(description="对齐 Student 与 Teacher 的 tokenizer（词表、特殊 token）")
+    parser.add_argument("--student", required=True, help="Student 模型路径")
+    parser.add_argument("--teacher", required=True, help="Teacher 模型路径（作为词表与特殊 token 的参考）")
+    parser.add_argument("--output-dir", default=None, help="输出根目录；默认在各自路径后加 -aligned")
+    parser.add_argument(
+        "--add-think",
+        action="store_true",
+        help="在 Student 的 chat_template 中 add_generation_prompt 的 assistant 后加 <think>\\n",
+    )
+    parser.add_argument("--no-unify-special-tokens", action="store_true", help="不统一特殊 token")
+    args = parser.parse_args()
+
+    unify_vocab_to_tokenizer_max(
+        student_model_path=args.student,
+        teacher_model_path=args.teacher,
+        output_dir=args.output_dir,
+        unify_special_tokens=not args.no_unify_special_tokens,
+        add_think_to_chat_template=args.add_think,
     )
