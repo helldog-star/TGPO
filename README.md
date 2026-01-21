@@ -7,6 +7,7 @@ You can install dependencies by running the following commands:
 conda create -n tgpo python=3.10
 conda activate tgpo
 pip install airports-py
+git clone https://github.com/helldog-star/TGPO
 git clone https://github.com/dottxt-ai/outlines
 cd outlines
 git checkout 0.0.46
