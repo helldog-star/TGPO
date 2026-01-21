@@ -17,7 +17,7 @@ pip install -r requirements.v2.txt
 pip install -e .
 cd verl
 pip install -e .
-cd ..
+cd ../..
 ```
 
 If you encounter issues when installing flash-attn, we recommend you to install it here 
