@@ -36,11 +36,9 @@ This repository includes:
 - `eval_scripts`: Evaluation scripts on math and out-of-distribution benchmarks.
 - `ExGRPO`: Implementation and notes for ExGRPO, which leverages off-policy experience replay to further boost performance without external guidance.
 
-我们的项目是建立在luffy之上，感谢luffy的开源工作！
+我们的项目建立在luffy之上，感谢luffy的开源工作！
 
 ---
-
-
 
 # 🔧Usage
 
@@ -52,7 +50,7 @@ bash download.sh
 bash my_prepare_train.sh
 ```
 
-## Training
+<!-- ## Training
 
 We provide an example script to train LUFFY on our subset of OpenR1-Math-220k. You can run the following command to train LUFFY:
 
@@ -299,4 +297,4 @@ If you find our model, data, or evaluation code useful, please kindly cite our p
       url={https://arxiv.org/abs/2510.02245}, 
 }
 ```
-
+ -->
