@@ -12,7 +12,7 @@ CONDA_ENV_NAME="vllm"  # Conda环境名称 # 这里需要单独新建一个conda
 source $CONDA_SH_PATH
 conda activate $CONDA_ENV_NAME
 
-pip insok ktall datasets
+pip install datasets
 pip install pandas
 
 MODEL_PATH="$BASE_DIR/Qwen3-30B-A3B-Thinking-2507-aligned"
