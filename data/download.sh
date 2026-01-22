@@ -1,10 +1,11 @@
 #!/bin/bash
 
 # Conda环境配置
-CONDA_SH_PATH="/mnt/zhaorunsong/anaconda3/etc/profile.d/conda.sh"  # Conda初始化脚本路径
+CONDA_SH_PATH="/opt/conda/etc/profile.d/conda.sh"  # Conda初始化脚本路径
 BASE_DIR="/tmp/hx/tgpo"
 
 CONDA_ENV_NAME="tgpo"  # Conda环境名称
+export HF_ENDPOINT=https://hf-mirror.com
 
 DATA_DIR="$(cd "$(dirname "$0")" && pwd)"  # 当前脚本所在目录，用于调用 align_tokenizer.py
 

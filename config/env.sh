@@ -3,7 +3,7 @@
 # 支持通过环境变量覆盖（如 CONDA_SH_PATH, CONDA_ENV_NAME）
 
 # ---------- 1. Conda 配置（可通过环境变量覆盖） ----------
-CONDA_SH_PATH="${CONDA_SH_PATH:-/mnt/zhaorunsong/anaconda3/etc/profile.d/conda.sh}"  # Conda初始化脚本路径
+CONDA_SH_PATH="${CONDA_SH_PATH:-/opt/conda/etc/profile.d/conda.sh}"  # Conda初始化脚本路径
 CONDA_ENV_NAME="${CONDA_ENV_NAME:-tgpo}"  # Conda环境名称
 
 # ---------- 2. 激活 conda 环境 ----------

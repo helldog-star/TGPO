@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Conda环境配置
-CONDA_SH_PATH="/mnt/zhaorunsong/anaconda3/etc/profile.d/conda.sh"  # Conda初始化脚本路径
+CONDA_SH_PATH="/opt/conda/etc/profile.d/conda.sh"  # Conda初始化脚本路径
 BASE_DIR="/tmp/hx/tgpo"
 
 # CONDA_SH_PATH="/mnt/lxy/miniconda3/etc/profile.d/conda.sh"  # Conda初始化脚本路径
