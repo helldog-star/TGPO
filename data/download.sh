@@ -68,3 +68,8 @@ echo "✅ 所有下载与 tokenizer 对齐已完成！"
 #     --local-dir "/mnt/lxy/hf_models/datasets/Openr1-Math-46k-8192" \
 #     --local-dir-use-symlinks False \
 #     --resume-download
+
+# huggingface-cli download Qwen/Qwen3-30B-A3B-Thinking-2507 \
+#     --local-dir "/mnt/lxy/hf_models/Qwen3-30B-A3B-Thinking-2507" \
+#     --local-dir-use-symlinks False \
+#     --resume-download

@@ -3,7 +3,7 @@ import time
 import json
 import argparse
 import pandas as pd
-from datasets import load_from_disk
+from datasets import load_dataset
 from transformers import AutoTokenizer
 from concurrent.futures import ThreadPoolExecutor
 from openai import OpenAI, APIError
@@ -23,7 +23,7 @@ SERVING_MODEL_NAME = None
 
 def parse_args():
     parser = argparse.ArgumentParser(description="OpenR1-Math 数据准备：经 vLLM 推理后生成训练用 Parquet")
-    parser.add_argument("--dataset-path", required=True, help="load_from_disk 用的数据集目录路径")
+    parser.add_argument("--dataset-path", required=True, help="load_dataset 用的数据集目录路径")
     parser.add_argument("--model-local-path", required=True, help="本地模型路径，用于加载 Tokenizer")
     parser.add_argument("--output-parquet-path", required=True, help="最终输出 Parquet 文件路径")
     parser.add_argument("--temp-cache-json-path", required=True, help="断点续传缓存 JSON 路径")
@@ -106,9 +106,10 @@ def main():
 
     # 1. 加载数据集
     print(f"正在加载数据集: {DATASET_PATH}")
-    ds_full = load_from_disk(DATASET_PATH)
-    # # Debug
-    # ds_full = ds_full.select(range(10))
+    ds_full = load_dataset("parquet", data_files=DATASET_PATH)
+    # Debug
+    print(ds_full)
+    ds_full = ds_full['train']
     
     # 2. 加载缓存和确定待处理索引
     results_cache = load_cache()

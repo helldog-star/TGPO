@@ -1,0 +1,1093 @@
+INFO 01-22 16:24:05 [__init__.py:239] Automatically detected platform cuda.
+INFO 01-22 16:24:07 [api_server.py:1034] vLLM API server version 0.8.4
+INFO 01-22 16:24:07 [api_server.py:1035] args: Namespace(subparser='serve', model_tag='/mnt/lxy/hf_models/Qwen3-0.6B', config='', host=None, port=8000, uvicorn_log_level='info', disable_uvicorn_access_log=False, allow_credentials=False, allowed_origins=['*'], allowed_methods=['*'], allowed_headers=['*'], api_key=None, lora_modules=None, prompt_adapters=None, chat_template=None, chat_template_content_format='auto', response_role='assistant', ssl_keyfile=None, ssl_certfile=None, ssl_ca_certs=None, enable_ssl_refresh=False, ssl_cert_reqs=0, root_path=None, middleware=[], return_tokens_as_token_ids=False, disable_frontend_multiprocessing=False, enable_request_id_headers=False, enable_auto_tool_choice=False, tool_call_parser=None, tool_parser_plugin='', model='/mnt/lxy/hf_models/Qwen3-0.6B', task='auto', tokenizer=None, hf_config_path=None, skip_tokenizer_init=False, revision=None, code_revision=None, tokenizer_revision=None, tokenizer_mode='auto', trust_remote_code=True, allowed_local_media_path=None, load_format='auto', download_dir=None, model_loader_extra_config=None, use_tqdm_on_load=True, config_format=<ConfigFormat.AUTO: 'auto'>, dtype='auto', kv_cache_dtype='auto', max_model_len=16384, guided_decoding_backend='auto', logits_processor_pattern=None, model_impl='auto', distributed_executor_backend=None, pipeline_parallel_size=1, tensor_parallel_size=1, data_parallel_size=1, enable_expert_parallel=False, max_parallel_loading_workers=None, ray_workers_use_nsight=False, disable_custom_all_reduce=False, block_size=None, enable_prefix_caching=None, prefix_caching_hash_algo='builtin', disable_sliding_window=False, use_v2_block_manager=True, num_lookahead_slots=0, seed=None, swap_space=4, cpu_offload_gb=0, gpu_memory_utilization=0.9, num_gpu_blocks_override=None, max_num_batched_tokens=None, max_num_partial_prefills=1, max_long_partial_prefills=1, long_prefill_token_threshold=0, max_num_seqs=None, max_logprobs=20, disable_log_stats=False, quantization=None, rope_scaling=None, rope_theta=None, hf_token=None, hf_overrides=None, enforce_eager=False, max_seq_len_to_capture=8192, tokenizer_pool_size=0, tokenizer_pool_type='ray', tokenizer_pool_extra_config=None, limit_mm_per_prompt=None, mm_processor_kwargs=None, disable_mm_preprocessor_cache=False, enable_lora=False, enable_lora_bias=False, max_loras=1, max_lora_rank=16, lora_extra_vocab_size=256, lora_dtype='auto', long_lora_scaling_factors=None, max_cpu_loras=None, fully_sharded_loras=False, enable_prompt_adapter=False, max_prompt_adapters=1, max_prompt_adapter_token=0, device='auto', num_scheduler_steps=1, multi_step_stream_outputs=True, scheduler_delay_factor=0.0, enable_chunked_prefill=None, speculative_config=None, ignore_patterns=[], preemption_mode=None, served_model_name=None, qlora_adapter_name_or_path=None, show_hidden_metrics_for_version=None, otlp_traces_endpoint=None, collect_detailed_traces=None, disable_async_output_proc=False, scheduling_policy='fcfs', scheduler_cls='vllm.core.scheduler.Scheduler', override_neuron_config=None, override_pooler_config=None, compilation_config=None, kv_transfer_config=None, worker_cls='auto', worker_extension_cls='', generation_config='auto', override_generation_config=None, enable_sleep_mode=False, calculate_kv_scales=False, additional_config=None, enable_reasoning=True, reasoning_parser='deepseek_r1', disable_cascade_attn=False, disable_chunked_mm_input=False, disable_log_requests=False, max_log_len=None, disable_fastapi_docs=False, enable_prompt_tokens_details=False, enable_server_load_tracking=False, dispatch_function=<function ServeSubcommand.cmd at 0x7c861d131240>)
+`torch_dtype` is deprecated! Use `dtype` instead!
+INFO 01-22 16:24:13 [config.py:689] This model supports multiple tasks: {'classify', 'generate', 'score', 'embed', 'reward'}. Defaulting to 'generate'.
+INFO 01-22 16:24:13 [config.py:1901] Chunked prefill is enabled with max_num_batched_tokens=2048.
+INFO 01-22 16:24:19 [__init__.py:239] Automatically detected platform cuda.
+INFO 01-22 16:24:21 [core.py:61] Initializing a V1 LLM engine (v0.8.4) with config: model='/mnt/lxy/hf_models/Qwen3-0.6B', speculative_config=None, tokenizer='/mnt/lxy/hf_models/Qwen3-0.6B', skip_tokenizer_init=False, tokenizer_mode=auto, revision=None, override_neuron_config=None, tokenizer_revision=None, trust_remote_code=True, dtype=torch.bfloat16, max_seq_len=16384, download_dir=None, load_format=auto, tensor_parallel_size=1, pipeline_parallel_size=1, disable_custom_all_reduce=False, quantization=None, enforce_eager=False, kv_cache_dtype=auto,  device_config=cuda, decoding_config=DecodingConfig(guided_decoding_backend='auto', reasoning_backend='deepseek_r1'), observability_config=ObservabilityConfig(show_hidden_metrics=False, otlp_traces_endpoint=None, collect_model_forward_time=False, collect_model_execute_time=False), seed=None, served_model_name=/mnt/lxy/hf_models/Qwen3-0.6B, num_scheduler_steps=1, multi_step_stream_outputs=True, enable_prefix_caching=True, chunked_prefill_enabled=True, use_async_output_proc=True, disable_mm_preprocessor_cache=False, mm_processor_kwargs=None, pooler_config=None, compilation_config={"level":3,"custom_ops":["none"],"splitting_ops":["vllm.unified_attention","vllm.unified_attention_with_output"],"use_inductor":true,"compile_sizes":[],"use_cudagraph":true,"cudagraph_num_of_warmups":1,"cudagraph_capture_sizes":[512,504,496,488,480,472,464,456,448,440,432,424,416,408,400,392,384,376,368,360,352,344,336,328,320,312,304,296,288,280,272,264,256,248,240,232,224,216,208,200,192,184,176,168,160,152,144,136,128,120,112,104,96,88,80,72,64,56,48,40,32,24,16,8,4,2,1],"max_capture_size":512}
+WARNING 01-22 16:24:21 [utils.py:2444] Methods determine_num_available_blocks,device_config,get_cache_block_size_bytes,initialize_cache not implemented in <vllm.v1.worker.gpu_worker.Worker object at 0x7c12a243f100>
+INFO 01-22 16:24:22 [parallel_state.py:959] rank 0 in world size 1 is assigned as DP rank 0, PP rank 0, TP rank 0
+INFO 01-22 16:24:22 [cuda.py:221] Using Flash Attention backend on V1 engine.
+INFO 01-22 16:24:22 [gpu_model_runner.py:1276] Starting to load model /mnt/lxy/hf_models/Qwen3-0.6B...
+WARNING 01-22 16:24:22 [topk_topp_sampler.py:69] FlashInfer is not available. Falling back to the PyTorch-native implementation of top-p & top-k sampling. For the best performance, please install FlashInfer.
+Loading safetensors checkpoint shards:   0% Completed | 0/1 [00:00<?, ?it/s]
+Loading safetensors checkpoint shards: 100% Completed | 1/1 [00:00<00:00,  4.92it/s]
+Loading safetensors checkpoint shards: 100% Completed | 1/1 [00:00<00:00,  4.91it/s]
+
+INFO 01-22 16:24:22 [loader.py:458] Loading weights took 0.27 seconds
+INFO 01-22 16:24:23 [gpu_model_runner.py:1291] Model loading took 1.1201 GiB and 0.459949 seconds
+INFO 01-22 16:24:30 [backends.py:416] Using cache directory: /mnt/lxy/.cache/vllm/torch_compile_cache/656f0b85e7/rank_0_0 for vLLM's torch.compile
+INFO 01-22 16:24:30 [backends.py:426] Dynamo bytecode transform time: 7.09 s
+INFO 01-22 16:24:31 [backends.py:115] Directly load the compiled graph for shape None from the cache
+INFO 01-22 16:24:37 [monitor.py:33] torch.compile takes 7.09 s in total
+INFO 01-22 16:24:37 [kv_cache_utils.py:634] GPU KV cache size: 172,384 tokens
+INFO 01-22 16:24:37 [kv_cache_utils.py:637] Maximum concurrency for 16,384 tokens per request: 10.52x
+INFO 01-22 16:24:54 [gpu_model_runner.py:1626] Graph capturing finished in 17 secs, took 0.46 GiB
+INFO 01-22 16:24:55 [core.py:163] init engine (profile, create kv cache, warmup model) took 32.08 seconds
+INFO 01-22 16:24:55 [core_client.py:435] Core engine process 0 ready.
+WARNING 01-22 16:24:55 [config.py:1177] Default sampling parameters have been overridden by the model's Hugging Face generation config recommended from the model creator. If this is not intended, please relaunch vLLM instance with `--generation-config vllm`.
+INFO 01-22 16:24:55 [serving_chat.py:118] Using default chat sampling params from model: {'temperature': 0.6, 'top_k': 20, 'top_p': 0.95}
+INFO 01-22 16:24:55 [serving_completion.py:61] Using default completion sampling params from model: {'temperature': 0.6, 'top_k': 20, 'top_p': 0.95}
+INFO 01-22 16:24:55 [api_server.py:1081] Starting vLLM API server on http://0.0.0.0:8000
+INFO 01-22 16:24:55 [launcher.py:26] Available routes are:
+INFO 01-22 16:24:55 [launcher.py:34] Route: /openapi.json, Methods: HEAD, GET
+INFO 01-22 16:24:55 [launcher.py:34] Route: /docs, Methods: HEAD, GET
+INFO 01-22 16:24:55 [launcher.py:34] Route: /docs/oauth2-redirect, Methods: HEAD, GET
+INFO 01-22 16:24:55 [launcher.py:34] Route: /redoc, Methods: HEAD, GET
+INFO 01-22 16:24:55 [launcher.py:34] Route: /health, Methods: GET
+INFO 01-22 16:24:55 [launcher.py:34] Route: /load, Methods: GET
+INFO 01-22 16:24:55 [launcher.py:34] Route: /ping, Methods: GET, POST
+INFO 01-22 16:24:55 [launcher.py:34] Route: /tokenize, Methods: POST
+INFO 01-22 16:24:55 [launcher.py:34] Route: /detokenize, Methods: POST
+INFO 01-22 16:24:55 [launcher.py:34] Route: /v1/models, Methods: GET
+INFO 01-22 16:24:55 [launcher.py:34] Route: /version, Methods: GET
+INFO 01-22 16:24:55 [launcher.py:34] Route: /v1/chat/completions, Methods: POST
+INFO 01-22 16:24:55 [launcher.py:34] Route: /v1/completions, Methods: POST
+INFO 01-22 16:24:55 [launcher.py:34] Route: /v1/embeddings, Methods: POST
+INFO 01-22 16:24:55 [launcher.py:34] Route: /pooling, Methods: POST
+INFO 01-22 16:24:55 [launcher.py:34] Route: /score, Methods: POST
+INFO 01-22 16:24:55 [launcher.py:34] Route: /v1/score, Methods: POST
+INFO 01-22 16:24:55 [launcher.py:34] Route: /v1/audio/transcriptions, Methods: POST
+INFO 01-22 16:24:55 [launcher.py:34] Route: /rerank, Methods: POST
+INFO 01-22 16:24:55 [launcher.py:34] Route: /v1/rerank, Methods: POST
+INFO 01-22 16:24:55 [launcher.py:34] Route: /v2/rerank, Methods: POST
+INFO 01-22 16:24:55 [launcher.py:34] Route: /invocations, Methods: POST
+INFO:     Started server process [2914007]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     127.0.0.1:55840 - "GET /health HTTP/1.1" 200 OK
+INFO 01-22 16:25:05 [loggers.py:87] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 0.0 tokens/s, Running: 0 reqs, Waiting: 0 reqs, GPU KV cache usage: 0.0%, Prefix cache hit rate: 0.0%
+INFO:     127.0.0.1:56018 - "GET /v1/models HTTP/1.1" 200 OK
+INFO 01-22 16:25:13 [logger.py:39] Received request cmpl-79d203cf3fb745c288bc612a03a727ad-0: prompt: '<|im_start|>system\nYour task is to follow a systematic, thorough reasoning process before providing the final solution. This involves analyzing, summarizing, exploring, reassessing, and refining your thought process through multiple iterations. Structure your response into two sections: Thought and Solution. In the Thought section, present your reasoning using the format: "<think>\n {thoughts} </think>\n". Each thought should include detailed analysis, brainstorming, verification, and refinement of ideas. After "</think>\n," in the Solution section, provide the final, logical, and accurate answer, clearly derived from the exploration in the Thought section. If applicable, include the answer in \\boxed{} for closed-form results like multiple choices or mathematical solutions.<|im_end|>\n<|im_start|>user\n4. Given the three sides of an obtuse triangle are 3, $4, x$, then the range of values for $x$ is ( ).\n(A) $1<x<7$.\n(B) $5 \\ll x<7$.\n(C) $1<x<\\sqrt{7}$.\n(D) $5<x<7$ or $1<x<\\sqrt{7}$.<|im_end|>\n<|im_start|>assistant\n', params: SamplingParams(n=1, presence_penalty=0.0, frequency_penalty=0.0, repetition_penalty=1.0, temperature=0.7, top_p=0.95, top_k=20, min_p=0.0, seed=None, stop=[], stop_token_ids=[], bad_words=[], include_stop_str_in_output=False, ignore_eos=False, max_tokens=8192, min_tokens=0, logprobs=None, prompt_logprobs=None, skip_special_tokens=True, spaces_between_special_tokens=True, truncate_prompt_tokens=None, guided_decoding=None, extra_args=None), prompt_token_ids: [151644, 8948, 198, 7771, 3383, 374, 311, 1795, 264, 36438, 11, 17423, 32711, 1882, 1573, 8241, 279, 1590, 6291, 13, 1096, 17601, 41018, 11, 28285, 4849, 11, 23966, 11, 31734, 433, 287, 11, 323, 73185, 697, 3381, 1882, 1526, 5248, 25687, 13, 28596, 697, 2033, 1119, 1378, 14158, 25, 35187, 323, 12478, 13, 758, 279, 35187, 3772, 11, 3042, 697, 32711, 1667, 279, 3561, 25, 330, 151667, 198, 314, 60565, 82, 92, 220, 151668, 198, 3263, 8886, 3381, 1265, 2924, 11682, 6358, 11, 86781, 287, 11, 22901, 11, 323, 72913, 315, 6708, 13, 4636, 330, 151668, 198, 1335, 304, 279, 12478, 3772, 11, 3410, 279, 1590, 11, 19819, 11, 323, 13382, 4226, 11, 9355, 14257, 504, 279, 26403, 304, 279, 35187, 3772, 13, 1416, 8415, 11, 2924, 279, 4226, 304, 1124, 79075, 6257, 369, 7877, 8460, 3059, 1075, 5248, 11454, 476, 35972, 9904, 13, 151645, 198, 151644, 872, 198, 19, 13, 16246, 279, 2326, 11067, 315, 458, 4514, 810, 21495, 525, 220, 18, 11, 400, 19, 11, 856, 54876, 1221, 279, 2088, 315, 2750, 369, 400, 87, 3, 374, 320, 95605, 4346, 8, 400, 16, 67325, 27, 22, 3, 624, 5349, 8, 400, 20, 1124, 654, 856, 27, 22, 3, 624, 3025, 8, 400, 16, 67325, 27, 59, 26888, 90, 22, 31716, 624, 5432, 8, 400, 20, 67325, 27, 22, 3, 476, 400, 16, 67325, 27, 59, 26888, 90, 22, 92, 12947, 151645, 198, 151644, 77091, 198], lora_request: None, prompt_adapter_request: None.
+INFO 01-22 16:25:13 [logger.py:39] Received request cmpl-79d203cf3fb745c288bc612a03a727ad-1: prompt: '<|im_start|>system\nYour task is to follow a systematic, thorough reasoning process before providing the final solution. This involves analyzing, summarizing, exploring, reassessing, and refining your thought process through multiple iterations. Structure your response into two sections: Thought and Solution. In the Thought section, present your reasoning using the format: "<think>\n {thoughts} </think>\n". Each thought should include detailed analysis, brainstorming, verification, and refinement of ideas. After "</think>\n," in the Solution section, provide the final, logical, and accurate answer, clearly derived from the exploration in the Thought section. If applicable, include the answer in \\boxed{} for closed-form results like multiple choices or mathematical solutions.<|im_end|>\n<|im_start|>user\n1. Solve the equation: $\\frac{8 x+13}{3}=\\frac{19-12 x}{2}-\\left(16 x-\\frac{7-4 x}{6}\\right)$.<|im_end|>\n<|im_start|>assistant\n', params: SamplingParams(n=1, presence_penalty=0.0, frequency_penalty=0.0, repetition_penalty=1.0, temperature=0.7, top_p=0.95, top_k=20, min_p=0.0, seed=None, stop=[], stop_token_ids=[], bad_words=[], include_stop_str_in_output=False, ignore_eos=False, max_tokens=8192, min_tokens=0, logprobs=None, prompt_logprobs=None, skip_special_tokens=True, spaces_between_special_tokens=True, truncate_prompt_tokens=None, guided_decoding=None, extra_args=None), prompt_token_ids: [151644, 8948, 198, 7771, 3383, 374, 311, 1795, 264, 36438, 11, 17423, 32711, 1882, 1573, 8241, 279, 1590, 6291, 13, 1096, 17601, 41018, 11, 28285, 4849, 11, 23966, 11, 31734, 433, 287, 11, 323, 73185, 697, 3381, 1882, 1526, 5248, 25687, 13, 28596, 697, 2033, 1119, 1378, 14158, 25, 35187, 323, 12478, 13, 758, 279, 35187, 3772, 11, 3042, 697, 32711, 1667, 279, 3561, 25, 330, 151667, 198, 314, 60565, 82, 92, 220, 151668, 198, 3263, 8886, 3381, 1265, 2924, 11682, 6358, 11, 86781, 287, 11, 22901, 11, 323, 72913, 315, 6708, 13, 4636, 330, 151668, 198, 1335, 304, 279, 12478, 3772, 11, 3410, 279, 1590, 11, 19819, 11, 323, 13382, 4226, 11, 9355, 14257, 504, 279, 26403, 304, 279, 35187, 3772, 13, 1416, 8415, 11, 2924, 279, 4226, 304, 1124, 79075, 6257, 369, 7877, 8460, 3059, 1075, 5248, 11454, 476, 35972, 9904, 13, 151645, 198, 151644, 872, 198, 16, 13, 63284, 279, 23606, 25, 57960, 37018, 90, 23, 856, 10, 16, 18, 15170, 18, 92, 34433, 37018, 90, 16, 24, 12, 16, 17, 856, 15170, 17, 19732, 59, 2359, 7, 16, 21, 856, 30529, 37018, 90, 22, 12, 19, 856, 15170, 21, 11035, 1291, 8, 12947, 151645, 198, 151644, 77091, 198], lora_request: None, prompt_adapter_request: None.
+INFO 01-22 16:25:13 [async_llm.py:228] Added request cmpl-79d203cf3fb745c288bc612a03a727ad-0.
+INFO 01-22 16:25:13 [async_llm.py:228] Added request cmpl-79d203cf3fb745c288bc612a03a727ad-1.
+INFO 01-22 16:25:13 [logger.py:39] Received request cmpl-0279723a92174418bc5438c61a7d1164-0: prompt: '<|im_start|>system\nYour task is to follow a systematic, thorough reasoning process before providing the final solution. This involves analyzing, summarizing, exploring, reassessing, and refining your thought process through multiple iterations. Structure your response into two sections: Thought and Solution. In the Thought section, present your reasoning using the format: "<think>\n {thoughts} </think>\n". Each thought should include detailed analysis, brainstorming, verification, and refinement of ideas. After "</think>\n," in the Solution section, provide the final, logical, and accurate answer, clearly derived from the exploration in the Thought section. If applicable, include the answer in \\boxed{} for closed-form results like multiple choices or mathematical solutions.<|im_end|>\n<|im_start|>user\nGiven $0 \\leqslant x, y, z \\leqslant 1$, solve the equation:\n$$\\frac{x}{1+y+z x}+\\frac{y}{1+z+x y}+\\frac{z}{1+x+y z}=\\frac{3}{x+y+z} .$$<|im_end|>\n<|im_start|>assistant\n', params: SamplingParams(n=1, presence_penalty=0.0, frequency_penalty=0.0, repetition_penalty=1.0, temperature=0.7, top_p=0.95, top_k=20, min_p=0.0, seed=None, stop=[], stop_token_ids=[], bad_words=[], include_stop_str_in_output=False, ignore_eos=False, max_tokens=8192, min_tokens=0, logprobs=None, prompt_logprobs=None, skip_special_tokens=True, spaces_between_special_tokens=True, truncate_prompt_tokens=None, guided_decoding=None, extra_args=None), prompt_token_ids: [151644, 8948, 198, 7771, 3383, 374, 311, 1795, 264, 36438, 11, 17423, 32711, 1882, 1573, 8241, 279, 1590, 6291, 13, 1096, 17601, 41018, 11, 28285, 4849, 11, 23966, 11, 31734, 433, 287, 11, 323, 73185, 697, 3381, 1882, 1526, 5248, 25687, 13, 28596, 697, 2033, 1119, 1378, 14158, 25, 35187, 323, 12478, 13, 758, 279, 35187, 3772, 11, 3042, 697, 32711, 1667, 279, 3561, 25, 330, 151667, 198, 314, 60565, 82, 92, 220, 151668, 198, 3263, 8886, 3381, 1265, 2924, 11682, 6358, 11, 86781, 287, 11, 22901, 11, 323, 72913, 315, 6708, 13, 4636, 330, 151668, 198, 1335, 304, 279, 12478, 3772, 11, 3410, 279, 1590, 11, 19819, 11, 323, 13382, 4226, 11, 9355, 14257, 504, 279, 26403, 304, 279, 35187, 3772, 13, 1416, 8415, 11, 2924, 279, 4226, 304, 1124, 79075, 6257, 369, 7877, 8460, 3059, 1075, 5248, 11454, 476, 35972, 9904, 13, 151645, 198, 151644, 872, 198, 22043, 400, 15, 1124, 273, 80, 3226, 517, 856, 11, 379, 11, 1147, 1124, 273, 80, 3226, 517, 220, 16, 54876, 11625, 279, 23606, 510, 14085, 59, 37018, 45340, 15170, 16, 43010, 92952, 856, 92, 41715, 37018, 90, 88, 15170, 16, 92952, 37892, 379, 92, 41715, 37018, 90, 89, 15170, 16, 37892, 43010, 1147, 92, 34433, 37018, 90, 18, 15170, 87, 43010, 92952, 92, 659, 14085, 151645, 198, 151644, 77091, 198], lora_request: None, prompt_adapter_request: None.
+INFO 01-22 16:25:13 [logger.py:39] Received request cmpl-0279723a92174418bc5438c61a7d1164-1: prompt: '<|im_start|>system\nYour task is to follow a systematic, thorough reasoning process before providing the final solution. This involves analyzing, summarizing, exploring, reassessing, and refining your thought process through multiple iterations. Structure your response into two sections: Thought and Solution. In the Thought section, present your reasoning using the format: "<think>\n {thoughts} </think>\n". Each thought should include detailed analysis, brainstorming, verification, and refinement of ideas. After "</think>\n," in the Solution section, provide the final, logical, and accurate answer, clearly derived from the exploration in the Thought section. If applicable, include the answer in \\boxed{} for closed-form results like multiple choices or mathematical solutions.<|im_end|>\n<|im_start|>user\nExample 6 The rules of a "level-up game" stipulate: On the $n$-th level, a die must be rolled $n$ times. If the sum of the points obtained from these $n$ rolls is greater than $2^{n}$, the level is considered passed. Questions:\n(1) What is the maximum number of levels a person can pass in this game?\n(2) What is the probability that he can pass the first three levels consecutively?\n(Note: A die is a uniform cube with points numbered $1,2,3,4,5,6$ on its faces. The number of points on the face that lands up after rolling the die is the result of the roll.)<|im_end|>\n<|im_start|>assistant\n', params: SamplingParams(n=1, presence_penalty=0.0, frequency_penalty=0.0, repetition_penalty=1.0, temperature=0.7, top_p=0.95, top_k=20, min_p=0.0, seed=None, stop=[], stop_token_ids=[], bad_words=[], include_stop_str_in_output=False, ignore_eos=False, max_tokens=8192, min_tokens=0, logprobs=None, prompt_logprobs=None, skip_special_tokens=True, spaces_between_special_tokens=True, truncate_prompt_tokens=None, guided_decoding=None, extra_args=None), prompt_token_ids: [151644, 8948, 198, 7771, 3383, 374, 311, 1795, 264, 36438, 11, 17423, 32711, 1882, 1573, 8241, 279, 1590, 6291, 13, 1096, 17601, 41018, 11, 28285, 4849, 11, 23966, 11, 31734, 433, 287, 11, 323, 73185, 697, 3381, 1882, 1526, 5248, 25687, 13, 28596, 697, 2033, 1119, 1378, 14158, 25, 35187, 323, 12478, 13, 758, 279, 35187, 3772, 11, 3042, 697, 32711, 1667, 279, 3561, 25, 330, 151667, 198, 314, 60565, 82, 92, 220, 151668, 198, 3263, 8886, 3381, 1265, 2924, 11682, 6358, 11, 86781, 287, 11, 22901, 11, 323, 72913, 315, 6708, 13, 4636, 330, 151668, 198, 1335, 304, 279, 12478, 3772, 11, 3410, 279, 1590, 11, 19819, 11, 323, 13382, 4226, 11, 9355, 14257, 504, 279, 26403, 304, 279, 35187, 3772, 13, 1416, 8415, 11, 2924, 279, 4226, 304, 1124, 79075, 6257, 369, 7877, 8460, 3059, 1075, 5248, 11454, 476, 35972, 9904, 13, 151645, 198, 151644, 872, 198, 13314, 220, 21, 576, 5601, 315, 264, 330, 3294, 5239, 1809, 1, 42673, 6334, 25, 1913, 279, 400, 77, 3, 12, 339, 2188, 11, 264, 2746, 1969, 387, 22447, 400, 77, 3, 3039, 13, 1416, 279, 2629, 315, 279, 3501, 12180, 504, 1493, 400, 77, 3, 27373, 374, 7046, 1091, 400, 17, 47822, 77, 31716, 11, 279, 2188, 374, 6509, 5823, 13, 23382, 510, 7, 16, 8, 3555, 374, 279, 7192, 1372, 315, 5866, 264, 1697, 646, 1494, 304, 419, 1809, 5267, 7, 17, 8, 3555, 374, 279, 18927, 429, 566, 646, 1494, 279, 1156, 2326, 5866, 19908, 332, 3132, 5267, 89389, 25, 362, 2746, 374, 264, 13794, 23739, 448, 3501, 48826, 400, 16, 11, 17, 11, 18, 11, 19, 11, 20, 11, 21, 3, 389, 1181, 12300, 13, 576, 1372, 315, 3501, 389, 279, 3579, 429, 11835, 705, 1283, 20097, 279, 2746, 374, 279, 1102, 315, 279, 6502, 6138, 151645, 198, 151644, 77091, 198], lora_request: None, prompt_adapter_request: None.
+INFO 01-22 16:25:13 [async_llm.py:228] Added request cmpl-0279723a92174418bc5438c61a7d1164-0.
+INFO 01-22 16:25:13 [async_llm.py:228] Added request cmpl-0279723a92174418bc5438c61a7d1164-1.
+INFO 01-22 16:25:13 [logger.py:39] Received request cmpl-c5b1da31d9e34991a046bcf1c1f997b2-0: prompt: '<|im_start|>system\nYour task is to follow a systematic, thorough reasoning process before providing the final solution. This involves analyzing, summarizing, exploring, reassessing, and refining your thought process through multiple iterations. Structure your response into two sections: Thought and Solution. In the Thought section, present your reasoning using the format: "<think>\n {thoughts} </think>\n". Each thought should include detailed analysis, brainstorming, verification, and refinement of ideas. After "</think>\n," in the Solution section, provide the final, logical, and accurate answer, clearly derived from the exploration in the Thought section. If applicable, include the answer in \\boxed{} for closed-form results like multiple choices or mathematical solutions.<|im_end|>\n<|im_start|>user\n## Task B-1.3.\n\nA ship traveling along a river has covered $24 \\mathrm{~km}$ upstream and $28 \\mathrm{~km}$ downstream. For this journey, it took half an hour less than for traveling $30 \\mathrm{~km}$ upstream and $21 \\mathrm{~km}$ downstream, or half an hour more than for traveling $15 \\mathrm{~km}$ upstream and $42 \\mathrm{~km}$ downstream, assuming that both the ship and the river move uniformly.\n\nDetermine the speed of the ship in still water and the speed of the river.<|im_end|>\n<|im_start|>assistant\n', params: SamplingParams(n=1, presence_penalty=0.0, frequency_penalty=0.0, repetition_penalty=1.0, temperature=0.7, top_p=0.95, top_k=20, min_p=0.0, seed=None, stop=[], stop_token_ids=[], bad_words=[], include_stop_str_in_output=False, ignore_eos=False, max_tokens=8192, min_tokens=0, logprobs=None, prompt_logprobs=None, skip_special_tokens=True, spaces_between_special_tokens=True, truncate_prompt_tokens=None, guided_decoding=None, extra_args=None), prompt_token_ids: [151644, 8948, 198, 7771, 3383, 374, 311, 1795, 264, 36438, 11, 17423, 32711, 1882, 1573, 8241, 279, 1590, 6291, 13, 1096, 17601, 41018, 11, 28285, 4849, 11, 23966, 11, 31734, 433, 287, 11, 323, 73185, 697, 3381, 1882, 1526, 5248, 25687, 13, 28596, 697, 2033, 1119, 1378, 14158, 25, 35187, 323, 12478, 13, 758, 279, 35187, 3772, 11, 3042, 697, 32711, 1667, 279, 3561, 25, 330, 151667, 198, 314, 60565, 82, 92, 220, 151668, 198, 3263, 8886, 3381, 1265, 2924, 11682, 6358, 11, 86781, 287, 11, 22901, 11, 323, 72913, 315, 6708, 13, 4636, 330, 151668, 198, 1335, 304, 279, 12478, 3772, 11, 3410, 279, 1590, 11, 19819, 11, 323, 13382, 4226, 11, 9355, 14257, 504, 279, 26403, 304, 279, 35187, 3772, 13, 1416, 8415, 11, 2924, 279, 4226, 304, 1124, 79075, 6257, 369, 7877, 8460, 3059, 1075, 5248, 11454, 476, 35972, 9904, 13, 151645, 198, 151644, 872, 198, 565, 5430, 425, 12, 16, 13, 18, 382, 32, 8284, 20971, 3156, 264, 14796, 702, 9761, 400, 17, 19, 1124, 91550, 90, 93, 16017, 31716, 41730, 323, 400, 17, 23, 1124, 91550, 90, 93, 16017, 31716, 51352, 13, 1752, 419, 11618, 11, 432, 3867, 4279, 458, 6460, 2686, 1091, 369, 20971, 400, 18, 15, 1124, 91550, 90, 93, 16017, 31716, 41730, 323, 400, 17, 16, 1124, 91550, 90, 93, 16017, 31716, 51352, 11, 476, 4279, 458, 6460, 803, 1091, 369, 20971, 400, 16, 20, 1124, 91550, 90, 93, 16017, 31716, 41730, 323, 400, 19, 17, 1124, 91550, 90, 93, 16017, 31716, 51352, 11, 25538, 429, 2176, 279, 8284, 323, 279, 14796, 3271, 77809, 382, 35, 24308, 279, 4628, 315, 279, 8284, 304, 2058, 3015, 323, 279, 4628, 315, 279, 14796, 13, 151645, 198, 151644, 77091, 198], lora_request: None, prompt_adapter_request: None.
+INFO 01-22 16:25:13 [logger.py:39] Received request cmpl-c5b1da31d9e34991a046bcf1c1f997b2-1: prompt: '<|im_start|>system\nYour task is to follow a systematic, thorough reasoning process before providing the final solution. This involves analyzing, summarizing, exploring, reassessing, and refining your thought process through multiple iterations. Structure your response into two sections: Thought and Solution. In the Thought section, present your reasoning using the format: "<think>\n {thoughts} </think>\n". Each thought should include detailed analysis, brainstorming, verification, and refinement of ideas. After "</think>\n," in the Solution section, provide the final, logical, and accurate answer, clearly derived from the exploration in the Thought section. If applicable, include the answer in \\boxed{} for closed-form results like multiple choices or mathematical solutions.<|im_end|>\n<|im_start|>user\n3. (6 points) A construction company was building a tunnel. When $\\frac{1}{3}$ of the tunnel was completed at the original speed, they started using new equipment, which increased the construction speed by $20 \\%$ and reduced the working hours to $80 \\%$ of the original. As a result, it took a total of 185 days to complete the tunnel. If they had not used the new equipment and continued at the original speed, it would have taken $\\qquad$ days to complete the tunnel.<|im_end|>\n<|im_start|>assistant\n', params: SamplingParams(n=1, presence_penalty=0.0, frequency_penalty=0.0, repetition_penalty=1.0, temperature=0.7, top_p=0.95, top_k=20, min_p=0.0, seed=None, stop=[], stop_token_ids=[], bad_words=[], include_stop_str_in_output=False, ignore_eos=False, max_tokens=8192, min_tokens=0, logprobs=None, prompt_logprobs=None, skip_special_tokens=True, spaces_between_special_tokens=True, truncate_prompt_tokens=None, guided_decoding=None, extra_args=None), prompt_token_ids: [151644, 8948, 198, 7771, 3383, 374, 311, 1795, 264, 36438, 11, 17423, 32711, 1882, 1573, 8241, 279, 1590, 6291, 13, 1096, 17601, 41018, 11, 28285, 4849, 11, 23966, 11, 31734, 433, 287, 11, 323, 73185, 697, 3381, 1882, 1526, 5248, 25687, 13, 28596, 697, 2033, 1119, 1378, 14158, 25, 35187, 323, 12478, 13, 758, 279, 35187, 3772, 11, 3042, 697, 32711, 1667, 279, 3561, 25, 330, 151667, 198, 314, 60565, 82, 92, 220, 151668, 198, 3263, 8886, 3381, 1265, 2924, 11682, 6358, 11, 86781, 287, 11, 22901, 11, 323, 72913, 315, 6708, 13, 4636, 330, 151668, 198, 1335, 304, 279, 12478, 3772, 11, 3410, 279, 1590, 11, 19819, 11, 323, 13382, 4226, 11, 9355, 14257, 504, 279, 26403, 304, 279, 35187, 3772, 13, 1416, 8415, 11, 2924, 279, 4226, 304, 1124, 79075, 6257, 369, 7877, 8460, 3059, 1075, 5248, 11454, 476, 35972, 9904, 13, 151645, 198, 151644, 872, 198, 18, 13, 320, 21, 3501, 8, 362, 8086, 2813, 572, 4752, 264, 25629, 13, 3197, 57960, 37018, 90, 16, 15170, 18, 31716, 315, 279, 25629, 572, 8145, 518, 279, 4024, 4628, 11, 807, 3855, 1667, 501, 7096, 11, 892, 7172, 279, 8086, 4628, 553, 400, 17, 15, 96292, 3, 323, 11046, 279, 3238, 4115, 311, 400, 23, 15, 96292, 3, 315, 279, 4024, 13, 1634, 264, 1102, 11, 432, 3867, 264, 2790, 315, 220, 16, 23, 20, 2849, 311, 4583, 279, 25629, 13, 1416, 807, 1030, 537, 1483, 279, 501, 7096, 323, 8570, 518, 279, 4024, 4628, 11, 432, 1035, 614, 4429, 57960, 80, 31610, 3, 2849, 311, 4583, 279, 25629, 13, 151645, 198, 151644, 77091, 198], lora_request: None, prompt_adapter_request: None.
+INFO 01-22 16:25:13 [async_llm.py:228] Added request cmpl-c5b1da31d9e34991a046bcf1c1f997b2-0.
+INFO 01-22 16:25:13 [async_llm.py:228] Added request cmpl-c5b1da31d9e34991a046bcf1c1f997b2-1.
+INFO 01-22 16:25:13 [logger.py:39] Received request cmpl-5f3039769f494643a0d575f05e8c6928-0: prompt: '<|im_start|>system\nYour task is to follow a systematic, thorough reasoning process before providing the final solution. This involves analyzing, summarizing, exploring, reassessing, and refining your thought process through multiple iterations. Structure your response into two sections: Thought and Solution. In the Thought section, present your reasoning using the format: "<think>\n {thoughts} </think>\n". Each thought should include detailed analysis, brainstorming, verification, and refinement of ideas. After "</think>\n," in the Solution section, provide the final, logical, and accurate answer, clearly derived from the exploration in the Thought section. If applicable, include the answer in \\boxed{} for closed-form results like multiple choices or mathematical solutions.<|im_end|>\n<|im_start|>user\n12.180. A side of the triangle is equal to 15, the sum of the other two sides is 27. Find the cosine of the angle opposite the given side, if the radius of the inscribed circle in the triangle is 4.<|im_end|>\n<|im_start|>assistant\n', params: SamplingParams(n=1, presence_penalty=0.0, frequency_penalty=0.0, repetition_penalty=1.0, temperature=0.7, top_p=0.95, top_k=20, min_p=0.0, seed=None, stop=[], stop_token_ids=[], bad_words=[], include_stop_str_in_output=False, ignore_eos=False, max_tokens=8192, min_tokens=0, logprobs=None, prompt_logprobs=None, skip_special_tokens=True, spaces_between_special_tokens=True, truncate_prompt_tokens=None, guided_decoding=None, extra_args=None), prompt_token_ids: [151644, 8948, 198, 7771, 3383, 374, 311, 1795, 264, 36438, 11, 17423, 32711, 1882, 1573, 8241, 279, 1590, 6291, 13, 1096, 17601, 41018, 11, 28285, 4849, 11, 23966, 11, 31734, 433, 287, 11, 323, 73185, 697, 3381, 1882, 1526, 5248, 25687, 13, 28596, 697, 2033, 1119, 1378, 14158, 25, 35187, 323, 12478, 13, 758, 279, 35187, 3772, 11, 3042, 697, 32711, 1667, 279, 3561, 25, 330, 151667, 198, 314, 60565, 82, 92, 220, 151668, 198, 3263, 8886, 3381, 1265, 2924, 11682, 6358, 11, 86781, 287, 11, 22901, 11, 323, 72913, 315, 6708, 13, 4636, 330, 151668, 198, 1335, 304, 279, 12478, 3772, 11, 3410, 279, 1590, 11, 19819, 11, 323, 13382, 4226, 11, 9355, 14257, 504, 279, 26403, 304, 279, 35187, 3772, 13, 1416, 8415, 11, 2924, 279, 4226, 304, 1124, 79075, 6257, 369, 7877, 8460, 3059, 1075, 5248, 11454, 476, 35972, 9904, 13, 151645, 198, 151644, 872, 198, 16, 17, 13, 16, 23, 15, 13, 362, 3108, 315, 279, 21495, 374, 6144, 311, 220, 16, 20, 11, 279, 2629, 315, 279, 1008, 1378, 11067, 374, 220, 17, 22, 13, 7379, 279, 75259, 315, 279, 9210, 14002, 279, 2661, 3108, 11, 421, 279, 10578, 315, 279, 1640, 17433, 12671, 304, 279, 21495, 374, 220, 19, 13, 151645, 198, 151644, 77091, 198], lora_request: None, prompt_adapter_request: None.
+INFO 01-22 16:25:13 [logger.py:39] Received request cmpl-5f3039769f494643a0d575f05e8c6928-1: prompt: '<|im_start|>system\nYour task is to follow a systematic, thorough reasoning process before providing the final solution. This involves analyzing, summarizing, exploring, reassessing, and refining your thought process through multiple iterations. Structure your response into two sections: Thought and Solution. In the Thought section, present your reasoning using the format: "<think>\n {thoughts} </think>\n". Each thought should include detailed analysis, brainstorming, verification, and refinement of ideas. After "</think>\n," in the Solution section, provide the final, logical, and accurate answer, clearly derived from the exploration in the Thought section. If applicable, include the answer in \\boxed{} for closed-form results like multiple choices or mathematical solutions.<|im_end|>\n<|im_start|>user\nOn a board, the numbers from 1 to 2009 are written. A couple of them are erased and instead of them, on the board is written the remainder of the sum of the erased numbers divided by 13. After a couple of repetition of this erasing, only 3 numbers are left, of which two are 9 and 999. Find the third number.<|im_end|>\n<|im_start|>assistant\n', params: SamplingParams(n=1, presence_penalty=0.0, frequency_penalty=0.0, repetition_penalty=1.0, temperature=0.7, top_p=0.95, top_k=20, min_p=0.0, seed=None, stop=[], stop_token_ids=[], bad_words=[], include_stop_str_in_output=False, ignore_eos=False, max_tokens=8192, min_tokens=0, logprobs=None, prompt_logprobs=None, skip_special_tokens=True, spaces_between_special_tokens=True, truncate_prompt_tokens=None, guided_decoding=None, extra_args=None), prompt_token_ids: [151644, 8948, 198, 7771, 3383, 374, 311, 1795, 264, 36438, 11, 17423, 32711, 1882, 1573, 8241, 279, 1590, 6291, 13, 1096, 17601, 41018, 11, 28285, 4849, 11, 23966, 11, 31734, 433, 287, 11, 323, 73185, 697, 3381, 1882, 1526, 5248, 25687, 13, 28596, 697, 2033, 1119, 1378, 14158, 25, 35187, 323, 12478, 13, 758, 279, 35187, 3772, 11, 3042, 697, 32711, 1667, 279, 3561, 25, 330, 151667, 198, 314, 60565, 82, 92, 220, 151668, 198, 3263, 8886, 3381, 1265, 2924, 11682, 6358, 11, 86781, 287, 11, 22901, 11, 323, 72913, 315, 6708, 13, 4636, 330, 151668, 198, 1335, 304, 279, 12478, 3772, 11, 3410, 279, 1590, 11, 19819, 11, 323, 13382, 4226, 11, 9355, 14257, 504, 279, 26403, 304, 279, 35187, 3772, 13, 1416, 8415, 11, 2924, 279, 4226, 304, 1124, 79075, 6257, 369, 7877, 8460, 3059, 1075, 5248, 11454, 476, 35972, 9904, 13, 151645, 198, 151644, 872, 198, 1925, 264, 4479, 11, 279, 5109, 504, 220, 16, 311, 220, 17, 15, 15, 24, 525, 5326, 13, 362, 5625, 315, 1105, 525, 63700, 323, 4518, 315, 1105, 11, 389, 279, 4479, 374, 5326, 279, 26313, 315, 279, 2629, 315, 279, 63700, 5109, 17779, 553, 220, 16, 18, 13, 4636, 264, 5625, 315, 53415, 315, 419, 2714, 4422, 11, 1172, 220, 18, 5109, 525, 2115, 11, 315, 892, 1378, 525, 220, 24, 323, 220, 24, 24, 24, 13, 7379, 279, 4843, 1372, 13, 151645, 198, 151644, 77091, 198], lora_request: None, prompt_adapter_request: None.
+INFO 01-22 16:25:13 [logger.py:39] Received request cmpl-12a3aec67a7a42a18e0a326b8102e4e8-0: prompt: '<|im_start|>system\nYour task is to follow a systematic, thorough reasoning process before providing the final solution. This involves analyzing, summarizing, exploring, reassessing, and refining your thought process through multiple iterations. Structure your response into two sections: Thought and Solution. In the Thought section, present your reasoning using the format: "<think>\n {thoughts} </think>\n". Each thought should include detailed analysis, brainstorming, verification, and refinement of ideas. After "</think>\n," in the Solution section, provide the final, logical, and accurate answer, clearly derived from the exploration in the Thought section. If applicable, include the answer in \\boxed{} for closed-form results like multiple choices or mathematical solutions.<|im_end|>\n<|im_start|>user\n7.1. Solve the equation $\\frac{n!}{2}=k!+l!$ in natural numbers, where $n!=1 \\cdot 2 \\cdot \\ldots n$. If there are no solutions, write 0; if there is one solution, write $n$; if there are multiple solutions, write the sum of the values of $n$ for all solutions. Recall that a solution is a triplet $(n, k, l)$; if solutions differ in at least one component, they are considered different.<|im_end|>\n<|im_start|>assistant\n', params: SamplingParams(n=1, presence_penalty=0.0, frequency_penalty=0.0, repetition_penalty=1.0, temperature=0.7, top_p=0.95, top_k=20, min_p=0.0, seed=None, stop=[], stop_token_ids=[], bad_words=[], include_stop_str_in_output=False, ignore_eos=False, max_tokens=8192, min_tokens=0, logprobs=None, prompt_logprobs=None, skip_special_tokens=True, spaces_between_special_tokens=True, truncate_prompt_tokens=None, guided_decoding=None, extra_args=None), prompt_token_ids: [151644, 8948, 198, 7771, 3383, 374, 311, 1795, 264, 36438, 11, 17423, 32711, 1882, 1573, 8241, 279, 1590, 6291, 13, 1096, 17601, 41018, 11, 28285, 4849, 11, 23966, 11, 31734, 433, 287, 11, 323, 73185, 697, 3381, 1882, 1526, 5248, 25687, 13, 28596, 697, 2033, 1119, 1378, 14158, 25, 35187, 323, 12478, 13, 758, 279, 35187, 3772, 11, 3042, 697, 32711, 1667, 279, 3561, 25, 330, 151667, 198, 314, 60565, 82, 92, 220, 151668, 198, 3263, 8886, 3381, 1265, 2924, 11682, 6358, 11, 86781, 287, 11, 22901, 11, 323, 72913, 315, 6708, 13, 4636, 330, 151668, 198, 1335, 304, 279, 12478, 3772, 11, 3410, 279, 1590, 11, 19819, 11, 323, 13382, 4226, 11, 9355, 14257, 504, 279, 26403, 304, 279, 35187, 3772, 13, 1416, 8415, 11, 2924, 279, 4226, 304, 1124, 79075, 6257, 369, 7877, 8460, 3059, 1075, 5248, 11454, 476, 35972, 9904, 13, 151645, 198, 151644, 872, 198, 22, 13, 16, 13, 63284, 279, 23606, 57960, 37018, 91362, 0, 15170, 17, 51185, 74, 0, 10, 75, 0, 3, 304, 5810, 5109, 11, 1380, 400, 77, 5824, 16, 1124, 50853, 220, 17, 1124, 50853, 1124, 507, 2412, 308, 12947, 1416, 1052, 525, 902, 9904, 11, 3270, 220, 15, 26, 421, 1052, 374, 825, 6291, 11, 3270, 400, 77, 3, 26, 421, 1052, 525, 5248, 9904, 11, 3270, 279, 2629, 315, 279, 2750, 315, 400, 77, 3, 369, 678, 9904, 13, 79540, 429, 264, 6291, 374, 264, 98709, 4930, 77, 11, 595, 11, 326, 15087, 26, 421, 9904, 1745, 304, 518, 3245, 825, 3692, 11, 807, 525, 6509, 2155, 13, 151645, 198, 151644, 77091, 198], lora_request: None, prompt_adapter_request: None.
+INFO 01-22 16:25:13 [logger.py:39] Received request cmpl-12a3aec67a7a42a18e0a326b8102e4e8-1: prompt: '<|im_start|>system\nYour task is to follow a systematic, thorough reasoning process before providing the final solution. This involves analyzing, summarizing, exploring, reassessing, and refining your thought process through multiple iterations. Structure your response into two sections: Thought and Solution. In the Thought section, present your reasoning using the format: "<think>\n {thoughts} </think>\n". Each thought should include detailed analysis, brainstorming, verification, and refinement of ideas. After "</think>\n," in the Solution section, provide the final, logical, and accurate answer, clearly derived from the exploration in the Thought section. If applicable, include the answer in \\boxed{} for closed-form results like multiple choices or mathematical solutions.<|im_end|>\n<|im_start|>user\n1. If the set\n$$\nA=\\{1,2, \\cdots, 10\\}, B=\\{1,2,3,4\\},\n$$\n$C$ is a subset of $A$, and $C \\cap B \\neq \\varnothing$, then the number of such subsets $C$ is $(\\quad)$.\n(A) 256\n(B) 959\n(C) 960\n(D) 961<|im_end|>\n<|im_start|>assistant\n', params: SamplingParams(n=1, presence_penalty=0.0, frequency_penalty=0.0, repetition_penalty=1.0, temperature=0.7, top_p=0.95, top_k=20, min_p=0.0, seed=None, stop=[], stop_token_ids=[], bad_words=[], include_stop_str_in_output=False, ignore_eos=False, max_tokens=8192, min_tokens=0, logprobs=None, prompt_logprobs=None, skip_special_tokens=True, spaces_between_special_tokens=True, truncate_prompt_tokens=None, guided_decoding=None, extra_args=None), prompt_token_ids: [151644, 8948, 198, 7771, 3383, 374, 311, 1795, 264, 36438, 11, 17423, 32711, 1882, 1573, 8241, 279, 1590, 6291, 13, 1096, 17601, 41018, 11, 28285, 4849, 11, 23966, 11, 31734, 433, 287, 11, 323, 73185, 697, 3381, 1882, 1526, 5248, 25687, 13, 28596, 697, 2033, 1119, 1378, 14158, 25, 35187, 323, 12478, 13, 758, 279, 35187, 3772, 11, 3042, 697, 32711, 1667, 279, 3561, 25, 330, 151667, 198, 314, 60565, 82, 92, 220, 151668, 198, 3263, 8886, 3381, 1265, 2924, 11682, 6358, 11, 86781, 287, 11, 22901, 11, 323, 72913, 315, 6708, 13, 4636, 330, 151668, 198, 1335, 304, 279, 12478, 3772, 11, 3410, 279, 1590, 11, 19819, 11, 323, 13382, 4226, 11, 9355, 14257, 504, 279, 26403, 304, 279, 35187, 3772, 13, 1416, 8415, 11, 2924, 279, 4226, 304, 1124, 79075, 6257, 369, 7877, 8460, 3059, 1075, 5248, 11454, 476, 35972, 9904, 13, 151645, 198, 151644, 872, 198, 16, 13, 1416, 279, 738, 198, 14085, 198, 32, 34433, 90, 16, 11, 17, 11, 1124, 4385, 2412, 11, 220, 16, 15, 59, 2137, 425, 34433, 90, 16, 11, 17, 11, 18, 11, 19, 59, 1583, 14085, 198, 3, 34, 3, 374, 264, 25993, 315, 400, 32, 54876, 323, 400, 34, 1124, 11346, 425, 1124, 811, 80, 1124, 947, 41212, 54876, 1221, 279, 1372, 315, 1741, 74505, 400, 34, 3, 374, 4930, 59, 31610, 15087, 624, 4346, 8, 220, 17, 20, 21, 198, 5349, 8, 220, 24, 20, 24, 198, 3025, 8, 220, 24, 21, 15, 198, 5432, 8, 220, 24, 21, 16, 151645, 198, 151644, 77091, 198], lora_request: None, prompt_adapter_request: None.
+INFO 01-22 16:25:13 [async_llm.py:228] Added request cmpl-5f3039769f494643a0d575f05e8c6928-0.
+INFO 01-22 16:25:13 [async_llm.py:228] Added request cmpl-5f3039769f494643a0d575f05e8c6928-1.
+INFO 01-22 16:25:13 [async_llm.py:228] Added request cmpl-12a3aec67a7a42a18e0a326b8102e4e8-0.
+INFO 01-22 16:25:13 [async_llm.py:228] Added request cmpl-12a3aec67a7a42a18e0a326b8102e4e8-1.
+INFO 01-22 16:25:13 [logger.py:39] Received request cmpl-74f67f5453bb4e398991030596d14364-0: prompt: '<|im_start|>system\nYour task is to follow a systematic, thorough reasoning process before providing the final solution. This involves analyzing, summarizing, exploring, reassessing, and refining your thought process through multiple iterations. Structure your response into two sections: Thought and Solution. In the Thought section, present your reasoning using the format: "<think>\n {thoughts} </think>\n". Each thought should include detailed analysis, brainstorming, verification, and refinement of ideas. After "</think>\n," in the Solution section, provide the final, logical, and accurate answer, clearly derived from the exploration in the Thought section. If applicable, include the answer in \\boxed{} for closed-form results like multiple choices or mathematical solutions.<|im_end|>\n<|im_start|>user\n2. (9th Canadian Mathematical Competition) $N$ is an integer, its representation in base $b$ is 777. Find the smallest positive integer $b$ such that $N$ is a fourth power of an integer in decimal notation.<|im_end|>\n<|im_start|>assistant\n', params: SamplingParams(n=1, presence_penalty=0.0, frequency_penalty=0.0, repetition_penalty=1.0, temperature=0.7, top_p=0.95, top_k=20, min_p=0.0, seed=None, stop=[], stop_token_ids=[], bad_words=[], include_stop_str_in_output=False, ignore_eos=False, max_tokens=8192, min_tokens=0, logprobs=None, prompt_logprobs=None, skip_special_tokens=True, spaces_between_special_tokens=True, truncate_prompt_tokens=None, guided_decoding=None, extra_args=None), prompt_token_ids: [151644, 8948, 198, 7771, 3383, 374, 311, 1795, 264, 36438, 11, 17423, 32711, 1882, 1573, 8241, 279, 1590, 6291, 13, 1096, 17601, 41018, 11, 28285, 4849, 11, 23966, 11, 31734, 433, 287, 11, 323, 73185, 697, 3381, 1882, 1526, 5248, 25687, 13, 28596, 697, 2033, 1119, 1378, 14158, 25, 35187, 323, 12478, 13, 758, 279, 35187, 3772, 11, 3042, 697, 32711, 1667, 279, 3561, 25, 330, 151667, 198, 314, 60565, 82, 92, 220, 151668, 198, 3263, 8886, 3381, 1265, 2924, 11682, 6358, 11, 86781, 287, 11, 22901, 11, 323, 72913, 315, 6708, 13, 4636, 330, 151668, 198, 1335, 304, 279, 12478, 3772, 11, 3410, 279, 1590, 11, 19819, 11, 323, 13382, 4226, 11, 9355, 14257, 504, 279, 26403, 304, 279, 35187, 3772, 13, 1416, 8415, 11, 2924, 279, 4226, 304, 1124, 79075, 6257, 369, 7877, 8460, 3059, 1075, 5248, 11454, 476, 35972, 9904, 13, 151645, 198, 151644, 872, 198, 17, 13, 320, 24, 339, 11888, 91002, 41221, 8, 400, 45, 3, 374, 458, 7546, 11, 1181, 13042, 304, 2331, 400, 65, 3, 374, 220, 22, 22, 22, 13, 7379, 279, 24632, 6785, 7546, 400, 65, 3, 1741, 429, 400, 45, 3, 374, 264, 11737, 2355, 315, 458, 7546, 304, 12122, 44197, 13, 151645, 198, 151644, 77091, 198], lora_request: None, prompt_adapter_request: None.
+INFO 01-22 16:25:13 [logger.py:39] Received request cmpl-74f67f5453bb4e398991030596d14364-1: prompt: '<|im_start|>system\nYour task is to follow a systematic, thorough reasoning process before providing the final solution. This involves analyzing, summarizing, exploring, reassessing, and refining your thought process through multiple iterations. Structure your response into two sections: Thought and Solution. In the Thought section, present your reasoning using the format: "<think>\n {thoughts} </think>\n". Each thought should include detailed analysis, brainstorming, verification, and refinement of ideas. After "</think>\n," in the Solution section, provide the final, logical, and accurate answer, clearly derived from the exploration in the Thought section. If applicable, include the answer in \\boxed{} for closed-form results like multiple choices or mathematical solutions.<|im_end|>\n<|im_start|>user\nProblem 6. (8 points) In the plane, there is a non-closed, non-self-intersecting broken line consisting of 31 segments (adjacent segments do not lie on the same straight line). For each segment, the line defined by it is constructed. It is possible for some of the 31 constructed lines to coincide. What is the minimum number of different lines that can be obtained?\n\nAnswer. 9.<|im_end|>\n<|im_start|>assistant\n', params: SamplingParams(n=1, presence_penalty=0.0, frequency_penalty=0.0, repetition_penalty=1.0, temperature=0.7, top_p=0.95, top_k=20, min_p=0.0, seed=None, stop=[], stop_token_ids=[], bad_words=[], include_stop_str_in_output=False, ignore_eos=False, max_tokens=8192, min_tokens=0, logprobs=None, prompt_logprobs=None, skip_special_tokens=True, spaces_between_special_tokens=True, truncate_prompt_tokens=None, guided_decoding=None, extra_args=None), prompt_token_ids: [151644, 8948, 198, 7771, 3383, 374, 311, 1795, 264, 36438, 11, 17423, 32711, 1882, 1573, 8241, 279, 1590, 6291, 13, 1096, 17601, 41018, 11, 28285, 4849, 11, 23966, 11, 31734, 433, 287, 11, 323, 73185, 697, 3381, 1882, 1526, 5248, 25687, 13, 28596, 697, 2033, 1119, 1378, 14158, 25, 35187, 323, 12478, 13, 758, 279, 35187, 3772, 11, 3042, 697, 32711, 1667, 279, 3561, 25, 330, 151667, 198, 314, 60565, 82, 92, 220, 151668, 198, 3263, 8886, 3381, 1265, 2924, 11682, 6358, 11, 86781, 287, 11, 22901, 11, 323, 72913, 315, 6708, 13, 4636, 330, 151668, 198, 1335, 304, 279, 12478, 3772, 11, 3410, 279, 1590, 11, 19819, 11, 323, 13382, 4226, 11, 9355, 14257, 504, 279, 26403, 304, 279, 35187, 3772, 13, 1416, 8415, 11, 2924, 279, 4226, 304, 1124, 79075, 6257, 369, 7877, 8460, 3059, 1075, 5248, 11454, 476, 35972, 9904, 13, 151645, 198, 151644, 872, 198, 31198, 220, 21, 13, 320, 23, 3501, 8, 758, 279, 11031, 11, 1052, 374, 264, 2477, 1786, 9259, 11, 2477, 41476, 44894, 9687, 287, 10865, 1555, 30606, 315, 220, 18, 16, 20632, 320, 24739, 18181, 20632, 653, 537, 10246, 389, 279, 1852, 7678, 1555, 568, 1752, 1817, 10238, 11, 279, 1555, 4512, 553, 432, 374, 20346, 13, 1084, 374, 3204, 369, 1045, 315, 279, 220, 18, 16, 20346, 5128, 311, 71259, 13, 3555, 374, 279, 8028, 1372, 315, 2155, 5128, 429, 646, 387, 12180, 1939, 16141, 13, 220, 24, 13, 151645, 198, 151644, 77091, 198], lora_request: None, prompt_adapter_request: None.
+INFO 01-22 16:25:13 [async_llm.py:228] Added request cmpl-74f67f5453bb4e398991030596d14364-0.
+INFO 01-22 16:25:13 [async_llm.py:228] Added request cmpl-74f67f5453bb4e398991030596d14364-1.
+INFO 01-22 16:25:13 [logger.py:39] Received request cmpl-728241263f204a0786abe1963c6de0ac-0: prompt: '<|im_start|>system\nYour task is to follow a systematic, thorough reasoning process before providing the final solution. This involves analyzing, summarizing, exploring, reassessing, and refining your thought process through multiple iterations. Structure your response into two sections: Thought and Solution. In the Thought section, present your reasoning using the format: "<think>\n {thoughts} </think>\n". Each thought should include detailed analysis, brainstorming, verification, and refinement of ideas. After "</think>\n," in the Solution section, provide the final, logical, and accurate answer, clearly derived from the exploration in the Thought section. If applicable, include the answer in \\boxed{} for closed-form results like multiple choices or mathematical solutions.<|im_end|>\n<|im_start|>user\nLet $a_n\\ (n\\geq 1)$ be the value for which $\\int_x^{2x} e^{-t^n}dt\\ (x\\geq 0)$ is maximal. Find $\\lim_{n\\to\\infty} \\ln a_n.$<|im_end|>\n<|im_start|>assistant\n', params: SamplingParams(n=1, presence_penalty=0.0, frequency_penalty=0.0, repetition_penalty=1.0, temperature=0.7, top_p=0.95, top_k=20, min_p=0.0, seed=None, stop=[], stop_token_ids=[], bad_words=[], include_stop_str_in_output=False, ignore_eos=False, max_tokens=8192, min_tokens=0, logprobs=None, prompt_logprobs=None, skip_special_tokens=True, spaces_between_special_tokens=True, truncate_prompt_tokens=None, guided_decoding=None, extra_args=None), prompt_token_ids: [151644, 8948, 198, 7771, 3383, 374, 311, 1795, 264, 36438, 11, 17423, 32711, 1882, 1573, 8241, 279, 1590, 6291, 13, 1096, 17601, 41018, 11, 28285, 4849, 11, 23966, 11, 31734, 433, 287, 11, 323, 73185, 697, 3381, 1882, 1526, 5248, 25687, 13, 28596, 697, 2033, 1119, 1378, 14158, 25, 35187, 323, 12478, 13, 758, 279, 35187, 3772, 11, 3042, 697, 32711, 1667, 279, 3561, 25, 330, 151667, 198, 314, 60565, 82, 92, 220, 151668, 198, 3263, 8886, 3381, 1265, 2924, 11682, 6358, 11, 86781, 287, 11, 22901, 11, 323, 72913, 315, 6708, 13, 4636, 330, 151668, 198, 1335, 304, 279, 12478, 3772, 11, 3410, 279, 1590, 11, 19819, 11, 323, 13382, 4226, 11, 9355, 14257, 504, 279, 26403, 304, 279, 35187, 3772, 13, 1416, 8415, 11, 2924, 279, 4226, 304, 1124, 79075, 6257, 369, 7877, 8460, 3059, 1075, 5248, 11454, 476, 35972, 9904, 13, 151645, 198, 151644, 872, 198, 10061, 400, 64, 1089, 59, 320, 77, 59, 709, 80, 220, 16, 15087, 387, 279, 897, 369, 892, 57960, 396, 3212, 47822, 17, 87, 92, 384, 87210, 83, 86167, 92, 8047, 59, 320, 87, 59, 709, 80, 220, 15, 15087, 374, 53129, 13, 7379, 57960, 4659, 15159, 77, 59, 983, 59, 258, 36958, 92, 1124, 2261, 264, 1089, 2418, 151645, 198, 151644, 77091, 198], lora_request: None, prompt_adapter_request: None.
+INFO 01-22 16:25:13 [logger.py:39] Received request cmpl-728241263f204a0786abe1963c6de0ac-1: prompt: '<|im_start|>system\nYour task is to follow a systematic, thorough reasoning process before providing the final solution. This involves analyzing, summarizing, exploring, reassessing, and refining your thought process through multiple iterations. Structure your response into two sections: Thought and Solution. In the Thought section, present your reasoning using the format: "<think>\n {thoughts} </think>\n". Each thought should include detailed analysis, brainstorming, verification, and refinement of ideas. After "</think>\n," in the Solution section, provide the final, logical, and accurate answer, clearly derived from the exploration in the Thought section. If applicable, include the answer in \\boxed{} for closed-form results like multiple choices or mathematical solutions.<|im_end|>\n<|im_start|>user\n6. As shown in Figure 2, let $P$ be a point inside the equilateral $\\triangle ABC$ with side length 12. Draw perpendiculars from $P$ to the sides $BC$, $CA$, and $AB$, with the feet of the perpendiculars being $D$, $E$, and $F$ respectively. Given that $PD: PE: PF = 1: 2: 3$. Then, the area of quadrilateral $BDPF$ is<|im_end|>\n<|im_start|>assistant\n', params: SamplingParams(n=1, presence_penalty=0.0, frequency_penalty=0.0, repetition_penalty=1.0, temperature=0.7, top_p=0.95, top_k=20, min_p=0.0, seed=None, stop=[], stop_token_ids=[], bad_words=[], include_stop_str_in_output=False, ignore_eos=False, max_tokens=8192, min_tokens=0, logprobs=None, prompt_logprobs=None, skip_special_tokens=True, spaces_between_special_tokens=True, truncate_prompt_tokens=None, guided_decoding=None, extra_args=None), prompt_token_ids: [151644, 8948, 198, 7771, 3383, 374, 311, 1795, 264, 36438, 11, 17423, 32711, 1882, 1573, 8241, 279, 1590, 6291, 13, 1096, 17601, 41018, 11, 28285, 4849, 11, 23966, 11, 31734, 433, 287, 11, 323, 73185, 697, 3381, 1882, 1526, 5248, 25687, 13, 28596, 697, 2033, 1119, 1378, 14158, 25, 35187, 323, 12478, 13, 758, 279, 35187, 3772, 11, 3042, 697, 32711, 1667, 279, 3561, 25, 330, 151667, 198, 314, 60565, 82, 92, 220, 151668, 198, 3263, 8886, 3381, 1265, 2924, 11682, 6358, 11, 86781, 287, 11, 22901, 11, 323, 72913, 315, 6708, 13, 4636, 330, 151668, 198, 1335, 304, 279, 12478, 3772, 11, 3410, 279, 1590, 11, 19819, 11, 323, 13382, 4226, 11, 9355, 14257, 504, 279, 26403, 304, 279, 35187, 3772, 13, 1416, 8415, 11, 2924, 279, 4226, 304, 1124, 79075, 6257, 369, 7877, 8460, 3059, 1075, 5248, 11454, 476, 35972, 9904, 13, 151645, 198, 151644, 872, 198, 21, 13, 1634, 6839, 304, 19037, 220, 17, 11, 1077, 400, 47, 3, 387, 264, 1459, 4766, 279, 3232, 42939, 57960, 55114, 19360, 3, 448, 3108, 3084, 220, 16, 17, 13, 11992, 76833, 82, 504, 400, 47, 3, 311, 279, 11067, 400, 4897, 54876, 400, 5049, 54876, 323, 400, 1867, 54876, 448, 279, 7541, 315, 279, 76833, 82, 1660, 400, 35, 54876, 400, 36, 54876, 323, 400, 37, 3, 15576, 13, 16246, 429, 400, 23025, 25, 21804, 25, 28415, 284, 220, 16, 25, 220, 17, 25, 220, 18, 12947, 5005, 11, 279, 3082, 315, 29136, 42939, 400, 9548, 19701, 3, 374, 151645, 198, 151644, 77091, 198], lora_request: None, prompt_adapter_request: None.
+INFO 01-22 16:25:13 [async_llm.py:228] Added request cmpl-728241263f204a0786abe1963c6de0ac-0.
+INFO 01-22 16:25:13 [async_llm.py:228] Added request cmpl-728241263f204a0786abe1963c6de0ac-1.
+INFO 01-22 16:25:13 [logger.py:39] Received request cmpl-34812fed1a334416b8e72449bdd86816-0: prompt: '<|im_start|>system\nYour task is to follow a systematic, thorough reasoning process before providing the final solution. This involves analyzing, summarizing, exploring, reassessing, and refining your thought process through multiple iterations. Structure your response into two sections: Thought and Solution. In the Thought section, present your reasoning using the format: "<think>\n {thoughts} </think>\n". Each thought should include detailed analysis, brainstorming, verification, and refinement of ideas. After "</think>\n," in the Solution section, provide the final, logical, and accurate answer, clearly derived from the exploration in the Thought section. If applicable, include the answer in \\boxed{} for closed-form results like multiple choices or mathematical solutions.<|im_end|>\n<|im_start|>user\nCondition of the problem\n\nFind the derivative.\n\n$$\ny=\\frac{1}{24}\\left(x^{2}+8\\right) \\sqrt{x^{2}-4}+\\frac{x^{2}}{16} \\arcsin \\frac{2}{x}, x>0\n$$<|im_end|>\n<|im_start|>assistant\n', params: SamplingParams(n=1, presence_penalty=0.0, frequency_penalty=0.0, repetition_penalty=1.0, temperature=0.7, top_p=0.95, top_k=20, min_p=0.0, seed=None, stop=[], stop_token_ids=[], bad_words=[], include_stop_str_in_output=False, ignore_eos=False, max_tokens=8192, min_tokens=0, logprobs=None, prompt_logprobs=None, skip_special_tokens=True, spaces_between_special_tokens=True, truncate_prompt_tokens=None, guided_decoding=None, extra_args=None), prompt_token_ids: [151644, 8948, 198, 7771, 3383, 374, 311, 1795, 264, 36438, 11, 17423, 32711, 1882, 1573, 8241, 279, 1590, 6291, 13, 1096, 17601, 41018, 11, 28285, 4849, 11, 23966, 11, 31734, 433, 287, 11, 323, 73185, 697, 3381, 1882, 1526, 5248, 25687, 13, 28596, 697, 2033, 1119, 1378, 14158, 25, 35187, 323, 12478, 13, 758, 279, 35187, 3772, 11, 3042, 697, 32711, 1667, 279, 3561, 25, 330, 151667, 198, 314, 60565, 82, 92, 220, 151668, 198, 3263, 8886, 3381, 1265, 2924, 11682, 6358, 11, 86781, 287, 11, 22901, 11, 323, 72913, 315, 6708, 13, 4636, 330, 151668, 198, 1335, 304, 279, 12478, 3772, 11, 3410, 279, 1590, 11, 19819, 11, 323, 13382, 4226, 11, 9355, 14257, 504, 279, 26403, 304, 279, 35187, 3772, 13, 1416, 8415, 11, 2924, 279, 4226, 304, 1124, 79075, 6257, 369, 7877, 8460, 3059, 1075, 5248, 11454, 476, 35972, 9904, 13, 151645, 198, 151644, 872, 198, 10547, 315, 279, 3491, 271, 9885, 279, 31805, 382, 14085, 198, 88, 34433, 37018, 90, 16, 15170, 17, 19, 11035, 2359, 2075, 47822, 17, 92, 10, 23, 59, 1291, 8, 1124, 26888, 45340, 47822, 17, 19732, 19, 92, 41715, 37018, 45340, 47822, 17, 3417, 90, 16, 21, 92, 1124, 277, 4837, 258, 1124, 37018, 90, 17, 15170, 87, 2137, 856, 29, 15, 198, 14085, 151645, 198, 151644, 77091, 198], lora_request: None, prompt_adapter_request: None.
+INFO 01-22 16:25:13 [logger.py:39] Received request cmpl-34812fed1a334416b8e72449bdd86816-1: prompt: '<|im_start|>system\nYour task is to follow a systematic, thorough reasoning process before providing the final solution. This involves analyzing, summarizing, exploring, reassessing, and refining your thought process through multiple iterations. Structure your response into two sections: Thought and Solution. In the Thought section, present your reasoning using the format: "<think>\n {thoughts} </think>\n". Each thought should include detailed analysis, brainstorming, verification, and refinement of ideas. After "</think>\n," in the Solution section, provide the final, logical, and accurate answer, clearly derived from the exploration in the Thought section. If applicable, include the answer in \\boxed{} for closed-form results like multiple choices or mathematical solutions.<|im_end|>\n<|im_start|>user\n6. Let $[x]$ denote the greatest integer not exceeding the real number $x$,\n$$\n\\begin{array}{c}\nS=\\left[\\frac{1}{1}\\right]+\\left[\\frac{2}{1}\\right]+\\left[\\frac{1}{2}\\right]+\\left[\\frac{2}{2}\\right]+\\left[\\frac{3}{2}\\right]+ \\\\\n{\\left[\\frac{4}{2}\\right]+\\left[\\frac{1}{3}\\right]+\\left[\\frac{2}{3}\\right]+\\left[\\frac{3}{3}\\right]+\\left[\\frac{4}{3}\\right]+} \\\\\n{\\left[\\frac{5}{3}\\right]+\\left[\\frac{6}{3}\\right]+\\cdots}\n\\end{array}\n$$\n\nup to 2016 terms, where, for a segment with denominator $k$, there are $2 k$ terms $\\left[\\frac{1}{k}\\right],\\left[\\frac{2}{k}\\right], \\cdots,\\left[\\frac{2 k}{k}\\right]$, and only the last segment may have fewer than $2 k$ terms. Then the value of $S$ is<|im_end|>\n<|im_start|>assistant\n', params: SamplingParams(n=1, presence_penalty=0.0, frequency_penalty=0.0, repetition_penalty=1.0, temperature=0.7, top_p=0.95, top_k=20, min_p=0.0, seed=None, stop=[], stop_token_ids=[], bad_words=[], include_stop_str_in_output=False, ignore_eos=False, max_tokens=8192, min_tokens=0, logprobs=None, prompt_logprobs=None, skip_special_tokens=True, spaces_between_special_tokens=True, truncate_prompt_tokens=None, guided_decoding=None, extra_args=None), prompt_token_ids: [151644, 8948, 198, 7771, 3383, 374, 311, 1795, 264, 36438, 11, 17423, 32711, 1882, 1573, 8241, 279, 1590, 6291, 13, 1096, 17601, 41018, 11, 28285, 4849, 11, 23966, 11, 31734, 433, 287, 11, 323, 73185, 697, 3381, 1882, 1526, 5248, 25687, 13, 28596, 697, 2033, 1119, 1378, 14158, 25, 35187, 323, 12478, 13, 758, 279, 35187, 3772, 11, 3042, 697, 32711, 1667, 279, 3561, 25, 330, 151667, 198, 314, 60565, 82, 92, 220, 151668, 198, 3263, 8886, 3381, 1265, 2924, 11682, 6358, 11, 86781, 287, 11, 22901, 11, 323, 72913, 315, 6708, 13, 4636, 330, 151668, 198, 1335, 304, 279, 12478, 3772, 11, 3410, 279, 1590, 11, 19819, 11, 323, 13382, 4226, 11, 9355, 14257, 504, 279, 26403, 304, 279, 35187, 3772, 13, 1416, 8415, 11, 2924, 279, 4226, 304, 1124, 79075, 6257, 369, 7877, 8460, 3059, 1075, 5248, 11454, 476, 35972, 9904, 13, 151645, 198, 151644, 872, 198, 21, 13, 6771, 400, 58, 87, 94280, 78064, 279, 12196, 7546, 537, 47905, 279, 1931, 1372, 400, 87, 3, 345, 14085, 198, 59, 7265, 90, 1653, 15170, 66, 532, 50, 34433, 2359, 26056, 37018, 90, 16, 15170, 16, 11035, 1291, 66327, 2359, 26056, 37018, 90, 17, 15170, 16, 11035, 1291, 66327, 2359, 26056, 37018, 90, 16, 15170, 17, 11035, 1291, 66327, 2359, 26056, 37018, 90, 17, 15170, 17, 11035, 1291, 66327, 2359, 26056, 37018, 90, 18, 15170, 17, 11035, 1291, 7574, 90155, 35702, 2359, 26056, 37018, 90, 19, 15170, 17, 11035, 1291, 66327, 2359, 26056, 37018, 90, 16, 15170, 18, 11035, 1291, 66327, 2359, 26056, 37018, 90, 17, 15170, 18, 11035, 1291, 66327, 2359, 26056, 37018, 90, 18, 15170, 18, 11035, 1291, 66327, 2359, 26056, 37018, 90, 19, 15170, 18, 11035, 1291, 7574, 92, 90155, 35702, 2359, 26056, 37018, 90, 20, 15170, 18, 11035, 1291, 66327, 2359, 26056, 37018, 90, 21, 15170, 18, 11035, 1291, 66327, 4385, 2412, 532, 59, 408, 90, 1653, 532, 14085, 271, 454, 311, 220, 17, 15, 16, 21, 3793, 11, 1380, 11, 369, 264, 10238, 448, 46912, 400, 74, 54876, 1052, 525, 400, 17, 595, 3, 3793, 57960, 2359, 26056, 37018, 90, 16, 15170, 74, 11035, 1291, 1125, 59, 2359, 26056, 37018, 90, 17, 15170, 74, 11035, 1291, 1125, 1124, 4385, 2412, 26266, 2359, 26056, 37018, 90, 17, 595, 15170, 74, 11035, 1291, 60, 54876, 323, 1172, 279, 1537, 10238, 1231, 614, 16745, 1091, 400, 17, 595, 3, 3793, 13, 5005, 279, 897, 315, 400, 50, 3, 374, 151645, 198, 151644, 77091, 198], lora_request: None, prompt_adapter_request: None.
+INFO 01-22 16:25:13 [async_llm.py:228] Added request cmpl-34812fed1a334416b8e72449bdd86816-0.
+INFO 01-22 16:25:13 [async_llm.py:228] Added request cmpl-34812fed1a334416b8e72449bdd86816-1.
+INFO 01-22 16:25:13 [logger.py:39] Received request cmpl-f6636604cc784af3976e5ab430abd8a1-0: prompt: '<|im_start|>system\nYour task is to follow a systematic, thorough reasoning process before providing the final solution. This involves analyzing, summarizing, exploring, reassessing, and refining your thought process through multiple iterations. Structure your response into two sections: Thought and Solution. In the Thought section, present your reasoning using the format: "<think>\n {thoughts} </think>\n". Each thought should include detailed analysis, brainstorming, verification, and refinement of ideas. After "</think>\n," in the Solution section, provide the final, logical, and accurate answer, clearly derived from the exploration in the Thought section. If applicable, include the answer in \\boxed{} for closed-form results like multiple choices or mathematical solutions.<|im_end|>\n<|im_start|>user\n4. The number of real solutions to the equation $\\left|x^{2}-3 x+2\\right|+\\left|x^{2}+2 x-3\\right|=11$ is ( ).\n(A) 0\n(B) 1\n(C) 2\n(D) 4<|im_end|>\n<|im_start|>assistant\n', params: SamplingParams(n=1, presence_penalty=0.0, frequency_penalty=0.0, repetition_penalty=1.0, temperature=0.7, top_p=0.95, top_k=20, min_p=0.0, seed=None, stop=[], stop_token_ids=[], bad_words=[], include_stop_str_in_output=False, ignore_eos=False, max_tokens=8192, min_tokens=0, logprobs=None, prompt_logprobs=None, skip_special_tokens=True, spaces_between_special_tokens=True, truncate_prompt_tokens=None, guided_decoding=None, extra_args=None), prompt_token_ids: [151644, 8948, 198, 7771, 3383, 374, 311, 1795, 264, 36438, 11, 17423, 32711, 1882, 1573, 8241, 279, 1590, 6291, 13, 1096, 17601, 41018, 11, 28285, 4849, 11, 23966, 11, 31734, 433, 287, 11, 323, 73185, 697, 3381, 1882, 1526, 5248, 25687, 13, 28596, 697, 2033, 1119, 1378, 14158, 25, 35187, 323, 12478, 13, 758, 279, 35187, 3772, 11, 3042, 697, 32711, 1667, 279, 3561, 25, 330, 151667, 198, 314, 60565, 82, 92, 220, 151668, 198, 3263, 8886, 3381, 1265, 2924, 11682, 6358, 11, 86781, 287, 11, 22901, 11, 323, 72913, 315, 6708, 13, 4636, 330, 151668, 198, 1335, 304, 279, 12478, 3772, 11, 3410, 279, 1590, 11, 19819, 11, 323, 13382, 4226, 11, 9355, 14257, 504, 279, 26403, 304, 279, 35187, 3772, 13, 1416, 8415, 11, 2924, 279, 4226, 304, 1124, 79075, 6257, 369, 7877, 8460, 3059, 1075, 5248, 11454, 476, 35972, 9904, 13, 151645, 198, 151644, 872, 198, 19, 13, 576, 1372, 315, 1931, 9904, 311, 279, 23606, 57960, 2359, 62827, 47822, 17, 19732, 18, 856, 10, 17, 59, 1291, 91, 41715, 2359, 62827, 47822, 17, 92, 10, 17, 856, 12, 18, 59, 1291, 87803, 16, 16, 3, 374, 320, 95605, 4346, 8, 220, 15, 198, 5349, 8, 220, 16, 198, 3025, 8, 220, 17, 198, 5432, 8, 220, 19, 151645, 198, 151644, 77091, 198], lora_request: None, prompt_adapter_request: None.
+INFO 01-22 16:25:13 [logger.py:39] Received request cmpl-f6636604cc784af3976e5ab430abd8a1-1: prompt: '<|im_start|>system\nYour task is to follow a systematic, thorough reasoning process before providing the final solution. This involves analyzing, summarizing, exploring, reassessing, and refining your thought process through multiple iterations. Structure your response into two sections: Thought and Solution. In the Thought section, present your reasoning using the format: "<think>\n {thoughts} </think>\n". Each thought should include detailed analysis, brainstorming, verification, and refinement of ideas. After "</think>\n," in the Solution section, provide the final, logical, and accurate answer, clearly derived from the exploration in the Thought section. If applicable, include the answer in \\boxed{} for closed-form results like multiple choices or mathematical solutions.<|im_end|>\n<|im_start|>user\n## Problem Statement\n\nCalculate the limit of the numerical sequence:\n\n$\\lim _{n \\rightarrow \\infty} \\frac{(n+1)^{4}-(n-1)^{4}}{(n+1)^{3}+(n-1)^{3}}$<|im_end|>\n<|im_start|>assistant\n', params: SamplingParams(n=1, presence_penalty=0.0, frequency_penalty=0.0, repetition_penalty=1.0, temperature=0.7, top_p=0.95, top_k=20, min_p=0.0, seed=None, stop=[], stop_token_ids=[], bad_words=[], include_stop_str_in_output=False, ignore_eos=False, max_tokens=8192, min_tokens=0, logprobs=None, prompt_logprobs=None, skip_special_tokens=True, spaces_between_special_tokens=True, truncate_prompt_tokens=None, guided_decoding=None, extra_args=None), prompt_token_ids: [151644, 8948, 198, 7771, 3383, 374, 311, 1795, 264, 36438, 11, 17423, 32711, 1882, 1573, 8241, 279, 1590, 6291, 13, 1096, 17601, 41018, 11, 28285, 4849, 11, 23966, 11, 31734, 433, 287, 11, 323, 73185, 697, 3381, 1882, 1526, 5248, 25687, 13, 28596, 697, 2033, 1119, 1378, 14158, 25, 35187, 323, 12478, 13, 758, 279, 35187, 3772, 11, 3042, 697, 32711, 1667, 279, 3561, 25, 330, 151667, 198, 314, 60565, 82, 92, 220, 151668, 198, 3263, 8886, 3381, 1265, 2924, 11682, 6358, 11, 86781, 287, 11, 22901, 11, 323, 72913, 315, 6708, 13, 4636, 330, 151668, 198, 1335, 304, 279, 12478, 3772, 11, 3410, 279, 1590, 11, 19819, 11, 323, 13382, 4226, 11, 9355, 14257, 504, 279, 26403, 304, 279, 35187, 3772, 13, 1416, 8415, 11, 2924, 279, 4226, 304, 1124, 79075, 6257, 369, 7877, 8460, 3059, 1075, 5248, 11454, 476, 35972, 9904, 13, 151645, 198, 151644, 872, 198, 565, 22079, 21756, 271, 47866, 279, 3930, 315, 279, 34776, 8500, 1447, 58736, 4659, 716, 90, 77, 1124, 19491, 1124, 258, 36958, 92, 1124, 37018, 96065, 77, 10, 16, 29776, 90, 19, 92, 8013, 77, 12, 16, 29776, 90, 19, 3417, 96065, 77, 10, 16, 29776, 90, 18, 92, 13362, 77, 12, 16, 29776, 90, 18, 3417, 3, 151645, 198, 151644, 77091, 198], lora_request: None, prompt_adapter_request: None.
+INFO 01-22 16:25:13 [async_llm.py:228] Added request cmpl-f6636604cc784af3976e5ab430abd8a1-0.
+INFO 01-22 16:25:13 [async_llm.py:228] Added request cmpl-f6636604cc784af3976e5ab430abd8a1-1.
+INFO 01-22 16:25:13 [logger.py:39] Received request cmpl-ea405f3c9b3940d394167a834091f1ca-0: prompt: '<|im_start|>system\nYour task is to follow a systematic, thorough reasoning process before providing the final solution. This involves analyzing, summarizing, exploring, reassessing, and refining your thought process through multiple iterations. Structure your response into two sections: Thought and Solution. In the Thought section, present your reasoning using the format: "<think>\n {thoughts} </think>\n". Each thought should include detailed analysis, brainstorming, verification, and refinement of ideas. After "</think>\n," in the Solution section, provide the final, logical, and accurate answer, clearly derived from the exploration in the Thought section. If applicable, include the answer in \\boxed{} for closed-form results like multiple choices or mathematical solutions.<|im_end|>\n<|im_start|>user\n19. Given $m \\in\\{11,13,15,17,19\\}$, $n \\in\\{1999,2000, \\cdots, 2018\\}$.\nThen the probability that the unit digit of $m^{n}$ is 1 is ( ).\n(A) $\\frac{1}{5}$\n(B) $\\frac{1}{4}$\n(C) $\\frac{3}{10}$\n(D) $\\frac{7}{20}$\n(E) $\\frac{2}{5}$<|im_end|>\n<|im_start|>assistant\n', params: SamplingParams(n=1, presence_penalty=0.0, frequency_penalty=0.0, repetition_penalty=1.0, temperature=0.7, top_p=0.95, top_k=20, min_p=0.0, seed=None, stop=[], stop_token_ids=[], bad_words=[], include_stop_str_in_output=False, ignore_eos=False, max_tokens=8192, min_tokens=0, logprobs=None, prompt_logprobs=None, skip_special_tokens=True, spaces_between_special_tokens=True, truncate_prompt_tokens=None, guided_decoding=None, extra_args=None), prompt_token_ids: [151644, 8948, 198, 7771, 3383, 374, 311, 1795, 264, 36438, 11, 17423, 32711, 1882, 1573, 8241, 279, 1590, 6291, 13, 1096, 17601, 41018, 11, 28285, 4849, 11, 23966, 11, 31734, 433, 287, 11, 323, 73185, 697, 3381, 1882, 1526, 5248, 25687, 13, 28596, 697, 2033, 1119, 1378, 14158, 25, 35187, 323, 12478, 13, 758, 279, 35187, 3772, 11, 3042, 697, 32711, 1667, 279, 3561, 25, 330, 151667, 198, 314, 60565, 82, 92, 220, 151668, 198, 3263, 8886, 3381, 1265, 2924, 11682, 6358, 11, 86781, 287, 11, 22901, 11, 323, 72913, 315, 6708, 13, 4636, 330, 151668, 198, 1335, 304, 279, 12478, 3772, 11, 3410, 279, 1590, 11, 19819, 11, 323, 13382, 4226, 11, 9355, 14257, 504, 279, 26403, 304, 279, 35187, 3772, 13, 1416, 8415, 11, 2924, 279, 4226, 304, 1124, 79075, 6257, 369, 7877, 8460, 3059, 1075, 5248, 11454, 476, 35972, 9904, 13, 151645, 198, 151644, 872, 198, 16, 24, 13, 16246, 400, 76, 1124, 258, 59, 90, 16, 16, 11, 16, 18, 11, 16, 20, 11, 16, 22, 11, 16, 24, 59, 31716, 11, 400, 77, 1124, 258, 59, 90, 16, 24, 24, 24, 11, 17, 15, 15, 15, 11, 1124, 4385, 2412, 11, 220, 17, 15, 16, 23, 59, 31716, 624, 12209, 279, 18927, 429, 279, 4982, 15723, 315, 400, 76, 47822, 77, 31716, 374, 220, 16, 374, 320, 95605, 4346, 8, 57960, 37018, 90, 16, 15170, 20, 92, 25046, 5349, 8, 57960, 37018, 90, 16, 15170, 19, 92, 25046, 3025, 8, 57960, 37018, 90, 18, 15170, 16, 15, 92, 25046, 5432, 8, 57960, 37018, 90, 22, 15170, 17, 15, 92, 25046, 10722, 8, 57960, 37018, 90, 17, 15170, 20, 31716, 151645, 198, 151644, 77091, 198], lora_request: None, prompt_adapter_request: None.
+INFO 01-22 16:25:13 [logger.py:39] Received request cmpl-ea405f3c9b3940d394167a834091f1ca-1: prompt: '<|im_start|>system\nYour task is to follow a systematic, thorough reasoning process before providing the final solution. This involves analyzing, summarizing, exploring, reassessing, and refining your thought process through multiple iterations. Structure your response into two sections: Thought and Solution. In the Thought section, present your reasoning using the format: "<think>\n {thoughts} </think>\n". Each thought should include detailed analysis, brainstorming, verification, and refinement of ideas. After "</think>\n," in the Solution section, provide the final, logical, and accurate answer, clearly derived from the exploration in the Thought section. If applicable, include the answer in \\boxed{} for closed-form results like multiple choices or mathematical solutions.<|im_end|>\n<|im_start|>user\n1. (6 points) Today is January 31, 2015, welcome to the 2015 "Spring Cup" Final. The calculation result of the expression $\\frac{\\frac{2015}{1}+\\frac{2015}{0.31}}{1+0.31}$ is<|im_end|>\n<|im_start|>assistant\n', params: SamplingParams(n=1, presence_penalty=0.0, frequency_penalty=0.0, repetition_penalty=1.0, temperature=0.7, top_p=0.95, top_k=20, min_p=0.0, seed=None, stop=[], stop_token_ids=[], bad_words=[], include_stop_str_in_output=False, ignore_eos=False, max_tokens=8192, min_tokens=0, logprobs=None, prompt_logprobs=None, skip_special_tokens=True, spaces_between_special_tokens=True, truncate_prompt_tokens=None, guided_decoding=None, extra_args=None), prompt_token_ids: [151644, 8948, 198, 7771, 3383, 374, 311, 1795, 264, 36438, 11, 17423, 32711, 1882, 1573, 8241, 279, 1590, 6291, 13, 1096, 17601, 41018, 11, 28285, 4849, 11, 23966, 11, 31734, 433, 287, 11, 323, 73185, 697, 3381, 1882, 1526, 5248, 25687, 13, 28596, 697, 2033, 1119, 1378, 14158, 25, 35187, 323, 12478, 13, 758, 279, 35187, 3772, 11, 3042, 697, 32711, 1667, 279, 3561, 25, 330, 151667, 198, 314, 60565, 82, 92, 220, 151668, 198, 3263, 8886, 3381, 1265, 2924, 11682, 6358, 11, 86781, 287, 11, 22901, 11, 323, 72913, 315, 6708, 13, 4636, 330, 151668, 198, 1335, 304, 279, 12478, 3772, 11, 3410, 279, 1590, 11, 19819, 11, 323, 13382, 4226, 11, 9355, 14257, 504, 279, 26403, 304, 279, 35187, 3772, 13, 1416, 8415, 11, 2924, 279, 4226, 304, 1124, 79075, 6257, 369, 7877, 8460, 3059, 1075, 5248, 11454, 476, 35972, 9904, 13, 151645, 198, 151644, 872, 198, 16, 13, 320, 21, 3501, 8, 11201, 374, 6058, 220, 18, 16, 11, 220, 17, 15, 16, 20, 11, 10565, 311, 279, 220, 17, 15, 16, 20, 330, 25150, 10861, 1, 13023, 13, 576, 21937, 1102, 315, 279, 7493, 57960, 37018, 35702, 37018, 90, 17, 15, 16, 20, 15170, 16, 92, 41715, 37018, 90, 17, 15, 16, 20, 15170, 15, 13, 18, 16, 3417, 90, 16, 10, 15, 13, 18, 16, 31716, 374, 151645, 198, 151644, 77091, 198], lora_request: None, prompt_adapter_request: None.
+INFO 01-22 16:25:13 [async_llm.py:228] Added request cmpl-ea405f3c9b3940d394167a834091f1ca-0.
+INFO 01-22 16:25:13 [async_llm.py:228] Added request cmpl-ea405f3c9b3940d394167a834091f1ca-1.
+INFO 01-22 16:25:13 [logger.py:39] Received request cmpl-a131622d7c5c4bae9534433997b70549-0: prompt: '<|im_start|>system\nYour task is to follow a systematic, thorough reasoning process before providing the final solution. This involves analyzing, summarizing, exploring, reassessing, and refining your thought process through multiple iterations. Structure your response into two sections: Thought and Solution. In the Thought section, present your reasoning using the format: "<think>\n {thoughts} </think>\n". Each thought should include detailed analysis, brainstorming, verification, and refinement of ideas. After "</think>\n," in the Solution section, provide the final, logical, and accurate answer, clearly derived from the exploration in the Thought section. If applicable, include the answer in \\boxed{} for closed-form results like multiple choices or mathematical solutions.<|im_end|>\n<|im_start|>user\nConsider a regular hexagon with an incircle. What is the ratio of the area inside the incircle to the area of the hexagon?\n<|im_end|>\n<|im_start|>assistant\n', params: SamplingParams(n=1, presence_penalty=0.0, frequency_penalty=0.0, repetition_penalty=1.0, temperature=0.7, top_p=0.95, top_k=20, min_p=0.0, seed=None, stop=[], stop_token_ids=[], bad_words=[], include_stop_str_in_output=False, ignore_eos=False, max_tokens=8192, min_tokens=0, logprobs=None, prompt_logprobs=None, skip_special_tokens=True, spaces_between_special_tokens=True, truncate_prompt_tokens=None, guided_decoding=None, extra_args=None), prompt_token_ids: [151644, 8948, 198, 7771, 3383, 374, 311, 1795, 264, 36438, 11, 17423, 32711, 1882, 1573, 8241, 279, 1590, 6291, 13, 1096, 17601, 41018, 11, 28285, 4849, 11, 23966, 11, 31734, 433, 287, 11, 323, 73185, 697, 3381, 1882, 1526, 5248, 25687, 13, 28596, 697, 2033, 1119, 1378, 14158, 25, 35187, 323, 12478, 13, 758, 279, 35187, 3772, 11, 3042, 697, 32711, 1667, 279, 3561, 25, 330, 151667, 198, 314, 60565, 82, 92, 220, 151668, 198, 3263, 8886, 3381, 1265, 2924, 11682, 6358, 11, 86781, 287, 11, 22901, 11, 323, 72913, 315, 6708, 13, 4636, 330, 151668, 198, 1335, 304, 279, 12478, 3772, 11, 3410, 279, 1590, 11, 19819, 11, 323, 13382, 4226, 11, 9355, 14257, 504, 279, 26403, 304, 279, 35187, 3772, 13, 1416, 8415, 11, 2924, 279, 4226, 304, 1124, 79075, 6257, 369, 7877, 8460, 3059, 1075, 5248, 11454, 476, 35972, 9904, 13, 151645, 198, 151644, 872, 198, 37175, 264, 5792, 12371, 6113, 448, 458, 3625, 7074, 13, 3555, 374, 279, 11341, 315, 279, 3082, 4766, 279, 3625, 7074, 311, 279, 3082, 315, 279, 12371, 6113, 5267, 151645, 198, 151644, 77091, 198], lora_request: None, prompt_adapter_request: None.
+INFO 01-22 16:25:13 [logger.py:39] Received request cmpl-a131622d7c5c4bae9534433997b70549-1: prompt: '<|im_start|>system\nYour task is to follow a systematic, thorough reasoning process before providing the final solution. This involves analyzing, summarizing, exploring, reassessing, and refining your thought process through multiple iterations. Structure your response into two sections: Thought and Solution. In the Thought section, present your reasoning using the format: "<think>\n {thoughts} </think>\n". Each thought should include detailed analysis, brainstorming, verification, and refinement of ideas. After "</think>\n," in the Solution section, provide the final, logical, and accurate answer, clearly derived from the exploration in the Thought section. If applicable, include the answer in \\boxed{} for closed-form results like multiple choices or mathematical solutions.<|im_end|>\n<|im_start|>user\nLet $ABC$ be a triangle with centroid $G$. Determine, with proof, the position of the point $P$ in the plane of $ABC$ such that $AP{\\cdot}AG + BP{\\cdot}BG + CP{\\cdot}CG$ is a minimum, and express this minimum value in terms of the side lengths of $ABC$.<|im_end|>\n<|im_start|>assistant\n', params: SamplingParams(n=1, presence_penalty=0.0, frequency_penalty=0.0, repetition_penalty=1.0, temperature=0.7, top_p=0.95, top_k=20, min_p=0.0, seed=None, stop=[], stop_token_ids=[], bad_words=[], include_stop_str_in_output=False, ignore_eos=False, max_tokens=8192, min_tokens=0, logprobs=None, prompt_logprobs=None, skip_special_tokens=True, spaces_between_special_tokens=True, truncate_prompt_tokens=None, guided_decoding=None, extra_args=None), prompt_token_ids: [151644, 8948, 198, 7771, 3383, 374, 311, 1795, 264, 36438, 11, 17423, 32711, 1882, 1573, 8241, 279, 1590, 6291, 13, 1096, 17601, 41018, 11, 28285, 4849, 11, 23966, 11, 31734, 433, 287, 11, 323, 73185, 697, 3381, 1882, 1526, 5248, 25687, 13, 28596, 697, 2033, 1119, 1378, 14158, 25, 35187, 323, 12478, 13, 758, 279, 35187, 3772, 11, 3042, 697, 32711, 1667, 279, 3561, 25, 330, 151667, 198, 314, 60565, 82, 92, 220, 151668, 198, 3263, 8886, 3381, 1265, 2924, 11682, 6358, 11, 86781, 287, 11, 22901, 11, 323, 72913, 315, 6708, 13, 4636, 330, 151668, 198, 1335, 304, 279, 12478, 3772, 11, 3410, 279, 1590, 11, 19819, 11, 323, 13382, 4226, 11, 9355, 14257, 504, 279, 26403, 304, 279, 35187, 3772, 13, 1416, 8415, 11, 2924, 279, 4226, 304, 1124, 79075, 6257, 369, 7877, 8460, 3059, 1075, 5248, 11454, 476, 35972, 9904, 13, 151645, 198, 151644, 872, 198, 10061, 400, 25411, 3, 387, 264, 21495, 448, 58119, 400, 38, 12947, 29901, 11, 448, 11064, 11, 279, 2309, 315, 279, 1459, 400, 47, 3, 304, 279, 11031, 315, 400, 25411, 3, 1741, 429, 400, 2537, 35702, 50853, 92, 1890, 488, 29067, 35702, 50853, 92, 37762, 488, 15284, 35702, 50853, 92, 8798, 3, 374, 264, 8028, 11, 323, 3158, 419, 8028, 897, 304, 3793, 315, 279, 3108, 28316, 315, 400, 25411, 12947, 151645, 198, 151644, 77091, 198], lora_request: None, prompt_adapter_request: None.
+INFO 01-22 16:25:13 [async_llm.py:228] Added request cmpl-a131622d7c5c4bae9534433997b70549-0.
+INFO 01-22 16:25:13 [async_llm.py:228] Added request cmpl-a131622d7c5c4bae9534433997b70549-1.
+INFO 01-22 16:25:13 [logger.py:39] Received request cmpl-29971ac3d4b543cc85ec09bd8385c401-0: prompt: '<|im_start|>system\nYour task is to follow a systematic, thorough reasoning process before providing the final solution. This involves analyzing, summarizing, exploring, reassessing, and refining your thought process through multiple iterations. Structure your response into two sections: Thought and Solution. In the Thought section, present your reasoning using the format: "<think>\n {thoughts} </think>\n". Each thought should include detailed analysis, brainstorming, verification, and refinement of ideas. After "</think>\n," in the Solution section, provide the final, logical, and accurate answer, clearly derived from the exploration in the Thought section. If applicable, include the answer in \\boxed{} for closed-form results like multiple choices or mathematical solutions.<|im_end|>\n<|im_start|>user\n30. Find the remainder when the 2018-digit number $\\underbrace{\\overline{55 \\cdots}}_{2018 \\text { 555 }}$ is divided by 13.<|im_end|>\n<|im_start|>assistant\n', params: SamplingParams(n=1, presence_penalty=0.0, frequency_penalty=0.0, repetition_penalty=1.0, temperature=0.7, top_p=0.95, top_k=20, min_p=0.0, seed=None, stop=[], stop_token_ids=[], bad_words=[], include_stop_str_in_output=False, ignore_eos=False, max_tokens=8192, min_tokens=0, logprobs=None, prompt_logprobs=None, skip_special_tokens=True, spaces_between_special_tokens=True, truncate_prompt_tokens=None, guided_decoding=None, extra_args=None), prompt_token_ids: [151644, 8948, 198, 7771, 3383, 374, 311, 1795, 264, 36438, 11, 17423, 32711, 1882, 1573, 8241, 279, 1590, 6291, 13, 1096, 17601, 41018, 11, 28285, 4849, 11, 23966, 11, 31734, 433, 287, 11, 323, 73185, 697, 3381, 1882, 1526, 5248, 25687, 13, 28596, 697, 2033, 1119, 1378, 14158, 25, 35187, 323, 12478, 13, 758, 279, 35187, 3772, 11, 3042, 697, 32711, 1667, 279, 3561, 25, 330, 151667, 198, 314, 60565, 82, 92, 220, 151668, 198, 3263, 8886, 3381, 1265, 2924, 11682, 6358, 11, 86781, 287, 11, 22901, 11, 323, 72913, 315, 6708, 13, 4636, 330, 151668, 198, 1335, 304, 279, 12478, 3772, 11, 3410, 279, 1590, 11, 19819, 11, 323, 13382, 4226, 11, 9355, 14257, 504, 279, 26403, 304, 279, 35187, 3772, 13, 1416, 8415, 11, 2924, 279, 4226, 304, 1124, 79075, 6257, 369, 7877, 8460, 3059, 1075, 5248, 11454, 476, 35972, 9904, 13, 151645, 198, 151644, 872, 198, 18, 15, 13, 7379, 279, 26313, 979, 279, 220, 17, 15, 16, 23, 48342, 1372, 57960, 7995, 31237, 35702, 1975, 1056, 90, 20, 20, 1124, 4385, 2412, 3417, 15159, 17, 15, 16, 23, 1124, 1318, 314, 220, 20, 20, 20, 3869, 3, 374, 17779, 553, 220, 16, 18, 13, 151645, 198, 151644, 77091, 198], lora_request: None, prompt_adapter_request: None.
+INFO 01-22 16:25:13 [logger.py:39] Received request cmpl-29971ac3d4b543cc85ec09bd8385c401-1: prompt: '<|im_start|>system\nYour task is to follow a systematic, thorough reasoning process before providing the final solution. This involves analyzing, summarizing, exploring, reassessing, and refining your thought process through multiple iterations. Structure your response into two sections: Thought and Solution. In the Thought section, present your reasoning using the format: "<think>\n {thoughts} </think>\n". Each thought should include detailed analysis, brainstorming, verification, and refinement of ideas. After "</think>\n," in the Solution section, provide the final, logical, and accurate answer, clearly derived from the exploration in the Thought section. If applicable, include the answer in \\boxed{} for closed-form results like multiple choices or mathematical solutions.<|im_end|>\n<|im_start|>user\n1. A line $l$ intersects a hyperbola $c$, then the maximum number of intersection points is ( ).\nA. 1\nB. 2\nC. 3\nD. 4<|im_end|>\n<|im_start|>assistant\n', params: SamplingParams(n=1, presence_penalty=0.0, frequency_penalty=0.0, repetition_penalty=1.0, temperature=0.7, top_p=0.95, top_k=20, min_p=0.0, seed=None, stop=[], stop_token_ids=[], bad_words=[], include_stop_str_in_output=False, ignore_eos=False, max_tokens=8192, min_tokens=0, logprobs=None, prompt_logprobs=None, skip_special_tokens=True, spaces_between_special_tokens=True, truncate_prompt_tokens=None, guided_decoding=None, extra_args=None), prompt_token_ids: [151644, 8948, 198, 7771, 3383, 374, 311, 1795, 264, 36438, 11, 17423, 32711, 1882, 1573, 8241, 279, 1590, 6291, 13, 1096, 17601, 41018, 11, 28285, 4849, 11, 23966, 11, 31734, 433, 287, 11, 323, 73185, 697, 3381, 1882, 1526, 5248, 25687, 13, 28596, 697, 2033, 1119, 1378, 14158, 25, 35187, 323, 12478, 13, 758, 279, 35187, 3772, 11, 3042, 697, 32711, 1667, 279, 3561, 25, 330, 151667, 198, 314, 60565, 82, 92, 220, 151668, 198, 3263, 8886, 3381, 1265, 2924, 11682, 6358, 11, 86781, 287, 11, 22901, 11, 323, 72913, 315, 6708, 13, 4636, 330, 151668, 198, 1335, 304, 279, 12478, 3772, 11, 3410, 279, 1590, 11, 19819, 11, 323, 13382, 4226, 11, 9355, 14257, 504, 279, 26403, 304, 279, 35187, 3772, 13, 1416, 8415, 11, 2924, 279, 4226, 304, 1124, 79075, 6257, 369, 7877, 8460, 3059, 1075, 5248, 11454, 476, 35972, 9904, 13, 151645, 198, 151644, 872, 198, 16, 13, 362, 1555, 400, 75, 3, 88184, 264, 17071, 65, 7924, 400, 66, 54876, 1221, 279, 7192, 1372, 315, 19246, 3501, 374, 320, 95605, 32, 13, 220, 16, 198, 33, 13, 220, 17, 198, 34, 13, 220, 18, 198, 35, 13, 220, 19, 151645, 198, 151644, 77091, 198], lora_request: None, prompt_adapter_request: None.
+INFO 01-22 16:25:13 [async_llm.py:228] Added request cmpl-29971ac3d4b543cc85ec09bd8385c401-0.
+INFO 01-22 16:25:13 [async_llm.py:228] Added request cmpl-29971ac3d4b543cc85ec09bd8385c401-1.
+INFO 01-22 16:25:13 [logger.py:39] Received request cmpl-877cd267b5e248be8f778cbddda7ce47-0: prompt: '<|im_start|>system\nYour task is to follow a systematic, thorough reasoning process before providing the final solution. This involves analyzing, summarizing, exploring, reassessing, and refining your thought process through multiple iterations. Structure your response into two sections: Thought and Solution. In the Thought section, present your reasoning using the format: "<think>\n {thoughts} </think>\n". Each thought should include detailed analysis, brainstorming, verification, and refinement of ideas. After "</think>\n," in the Solution section, provide the final, logical, and accurate answer, clearly derived from the exploration in the Thought section. If applicable, include the answer in \\boxed{} for closed-form results like multiple choices or mathematical solutions.<|im_end|>\n<|im_start|>user\n1. Let the universal set be the set of real numbers. If $A=\\{x \\mid \\sqrt{x-2} \\leqslant 0\\}, B=\\left\\{x \\mid 10^{x^{2}-2}=10^{x}\\right\\}$, then $A \\cap \\bar{B}$ is\nA. $\\{2\\}$\nB. $\\{-1\\}$\nC. $\\{x \\mid x \\leqslant 2\\}$\nD. $\\varnothing$<|im_end|>\n<|im_start|>assistant\n', params: SamplingParams(n=1, presence_penalty=0.0, frequency_penalty=0.0, repetition_penalty=1.0, temperature=0.7, top_p=0.95, top_k=20, min_p=0.0, seed=None, stop=[], stop_token_ids=[], bad_words=[], include_stop_str_in_output=False, ignore_eos=False, max_tokens=8192, min_tokens=0, logprobs=None, prompt_logprobs=None, skip_special_tokens=True, spaces_between_special_tokens=True, truncate_prompt_tokens=None, guided_decoding=None, extra_args=None), prompt_token_ids: [151644, 8948, 198, 7771, 3383, 374, 311, 1795, 264, 36438, 11, 17423, 32711, 1882, 1573, 8241, 279, 1590, 6291, 13, 1096, 17601, 41018, 11, 28285, 4849, 11, 23966, 11, 31734, 433, 287, 11, 323, 73185, 697, 3381, 1882, 1526, 5248, 25687, 13, 28596, 697, 2033, 1119, 1378, 14158, 25, 35187, 323, 12478, 13, 758, 279, 35187, 3772, 11, 3042, 697, 32711, 1667, 279, 3561, 25, 330, 151667, 198, 314, 60565, 82, 92, 220, 151668, 198, 3263, 8886, 3381, 1265, 2924, 11682, 6358, 11, 86781, 287, 11, 22901, 11, 323, 72913, 315, 6708, 13, 4636, 330, 151668, 198, 1335, 304, 279, 12478, 3772, 11, 3410, 279, 1590, 11, 19819, 11, 323, 13382, 4226, 11, 9355, 14257, 504, 279, 26403, 304, 279, 35187, 3772, 13, 1416, 8415, 11, 2924, 279, 4226, 304, 1124, 79075, 6257, 369, 7877, 8460, 3059, 1075, 5248, 11454, 476, 35972, 9904, 13, 151645, 198, 151644, 872, 198, 16, 13, 6771, 279, 20178, 738, 387, 279, 738, 315, 1931, 5109, 13, 1416, 400, 32, 34433, 90, 87, 1124, 16106, 1124, 26888, 45340, 12, 17, 92, 1124, 273, 80, 3226, 517, 220, 15, 59, 2137, 425, 34433, 2359, 59, 90, 87, 1124, 16106, 220, 16, 15, 47822, 87, 47822, 17, 19732, 17, 51185, 16, 15, 47822, 87, 11035, 1291, 59, 31716, 11, 1221, 400, 32, 1124, 11346, 1124, 2257, 90, 33, 31716, 374, 198, 32, 13, 57960, 90, 17, 59, 92, 25046, 33, 13, 57960, 19999, 16, 59, 92, 25046, 34, 13, 57960, 90, 87, 1124, 16106, 856, 1124, 273, 80, 3226, 517, 220, 17, 59, 92, 25046, 35, 13, 57960, 947, 41212, 3, 151645, 198, 151644, 77091, 198], lora_request: None, prompt_adapter_request: None.
+INFO 01-22 16:25:13 [logger.py:39] Received request cmpl-877cd267b5e248be8f778cbddda7ce47-1: prompt: '<|im_start|>system\nYour task is to follow a systematic, thorough reasoning process before providing the final solution. This involves analyzing, summarizing, exploring, reassessing, and refining your thought process through multiple iterations. Structure your response into two sections: Thought and Solution. In the Thought section, present your reasoning using the format: "<think>\n {thoughts} </think>\n". Each thought should include detailed analysis, brainstorming, verification, and refinement of ideas. After "</think>\n," in the Solution section, provide the final, logical, and accurate answer, clearly derived from the exploration in the Thought section. If applicable, include the answer in \\boxed{} for closed-form results like multiple choices or mathematical solutions.<|im_end|>\n<|im_start|>user\n4. As shown in Figure 1, in the right triangular prism $A B C-A_{1} B_{1} C_{1}$, $A A_{1}=A B=A C$, and $M$ and $Q$ are the midpoints of $C C_{1}$ and $B C$ respectively. If for any point $P$ on the line segment $A_{1} B_{1}$, $P Q \\perp A M$, then $\\angle B A C$ equals ( ).\n(A) $30^{\\circ}$\n(B) $45^{\\circ}$\n(C) $60^{\\circ}$\n(D) $90^{\\circ}$<|im_end|>\n<|im_start|>assistant\n', params: SamplingParams(n=1, presence_penalty=0.0, frequency_penalty=0.0, repetition_penalty=1.0, temperature=0.7, top_p=0.95, top_k=20, min_p=0.0, seed=None, stop=[], stop_token_ids=[], bad_words=[], include_stop_str_in_output=False, ignore_eos=False, max_tokens=8192, min_tokens=0, logprobs=None, prompt_logprobs=None, skip_special_tokens=True, spaces_between_special_tokens=True, truncate_prompt_tokens=None, guided_decoding=None, extra_args=None), prompt_token_ids: [151644, 8948, 198, 7771, 3383, 374, 311, 1795, 264, 36438, 11, 17423, 32711, 1882, 1573, 8241, 279, 1590, 6291, 13, 1096, 17601, 41018, 11, 28285, 4849, 11, 23966, 11, 31734, 433, 287, 11, 323, 73185, 697, 3381, 1882, 1526, 5248, 25687, 13, 28596, 697, 2033, 1119, 1378, 14158, 25, 35187, 323, 12478, 13, 758, 279, 35187, 3772, 11, 3042, 697, 32711, 1667, 279, 3561, 25, 330, 151667, 198, 314, 60565, 82, 92, 220, 151668, 198, 3263, 8886, 3381, 1265, 2924, 11682, 6358, 11, 86781, 287, 11, 22901, 11, 323, 72913, 315, 6708, 13, 4636, 330, 151668, 198, 1335, 304, 279, 12478, 3772, 11, 3410, 279, 1590, 11, 19819, 11, 323, 13382, 4226, 11, 9355, 14257, 504, 279, 26403, 304, 279, 35187, 3772, 13, 1416, 8415, 11, 2924, 279, 4226, 304, 1124, 79075, 6257, 369, 7877, 8460, 3059, 1075, 5248, 11454, 476, 35972, 9904, 13, 151645, 198, 151644, 872, 198, 19, 13, 1634, 6839, 304, 19037, 220, 16, 11, 304, 279, 1290, 65494, 93610, 400, 32, 425, 356, 6691, 15159, 16, 92, 425, 15159, 16, 92, 356, 15159, 16, 31716, 11, 400, 32, 362, 15159, 16, 51185, 32, 425, 46623, 356, 54876, 323, 400, 44, 3, 323, 400, 48, 3, 525, 279, 5099, 7706, 315, 400, 34, 356, 15159, 16, 31716, 323, 400, 33, 356, 3, 15576, 13, 1416, 369, 894, 1459, 400, 47, 3, 389, 279, 1555, 10238, 400, 32, 15159, 16, 92, 425, 15159, 16, 31716, 11, 400, 47, 1207, 1124, 712, 79, 362, 386, 54876, 1221, 57960, 4044, 425, 362, 356, 3, 16819, 320, 95605, 4346, 8, 400, 18, 15, 61, 35702, 43298, 92, 25046, 5349, 8, 400, 19, 20, 61, 35702, 43298, 92, 25046, 3025, 8, 400, 21, 15, 61, 35702, 43298, 92, 25046, 5432, 8, 400, 24, 15, 61, 35702, 43298, 31716, 151645, 198, 151644, 77091, 198], lora_request: None, prompt_adapter_request: None.
+INFO 01-22 16:25:13 [async_llm.py:228] Added request cmpl-877cd267b5e248be8f778cbddda7ce47-0.
+INFO 01-22 16:25:13 [async_llm.py:228] Added request cmpl-877cd267b5e248be8f778cbddda7ce47-1.
+INFO 01-22 16:25:13 [logger.py:39] Received request cmpl-46d5cadb759745c89de385de7d57e2eb-0: prompt: '<|im_start|>system\nYour task is to follow a systematic, thorough reasoning process before providing the final solution. This involves analyzing, summarizing, exploring, reassessing, and refining your thought process through multiple iterations. Structure your response into two sections: Thought and Solution. In the Thought section, present your reasoning using the format: "<think>\n {thoughts} </think>\n". Each thought should include detailed analysis, brainstorming, verification, and refinement of ideas. After "</think>\n," in the Solution section, provide the final, logical, and accurate answer, clearly derived from the exploration in the Thought section. If applicable, include the answer in \\boxed{} for closed-form results like multiple choices or mathematical solutions.<|im_end|>\n<|im_start|>user\n1. Four points $A, B, C, D$ in space are pairwise 1 unit apart, and points $P, Q$ move on line segments $AB, CD$ respectively. The minimum distance between point $P$ and $Q$ is<|im_end|>\n<|im_start|>assistant\n', params: SamplingParams(n=1, presence_penalty=0.0, frequency_penalty=0.0, repetition_penalty=1.0, temperature=0.7, top_p=0.95, top_k=20, min_p=0.0, seed=None, stop=[], stop_token_ids=[], bad_words=[], include_stop_str_in_output=False, ignore_eos=False, max_tokens=8192, min_tokens=0, logprobs=None, prompt_logprobs=None, skip_special_tokens=True, spaces_between_special_tokens=True, truncate_prompt_tokens=None, guided_decoding=None, extra_args=None), prompt_token_ids: [151644, 8948, 198, 7771, 3383, 374, 311, 1795, 264, 36438, 11, 17423, 32711, 1882, 1573, 8241, 279, 1590, 6291, 13, 1096, 17601, 41018, 11, 28285, 4849, 11, 23966, 11, 31734, 433, 287, 11, 323, 73185, 697, 3381, 1882, 1526, 5248, 25687, 13, 28596, 697, 2033, 1119, 1378, 14158, 25, 35187, 323, 12478, 13, 758, 279, 35187, 3772, 11, 3042, 697, 32711, 1667, 279, 3561, 25, 330, 151667, 198, 314, 60565, 82, 92, 220, 151668, 198, 3263, 8886, 3381, 1265, 2924, 11682, 6358, 11, 86781, 287, 11, 22901, 11, 323, 72913, 315, 6708, 13, 4636, 330, 151668, 198, 1335, 304, 279, 12478, 3772, 11, 3410, 279, 1590, 11, 19819, 11, 323, 13382, 4226, 11, 9355, 14257, 504, 279, 26403, 304, 279, 35187, 3772, 13, 1416, 8415, 11, 2924, 279, 4226, 304, 1124, 79075, 6257, 369, 7877, 8460, 3059, 1075, 5248, 11454, 476, 35972, 9904, 13, 151645, 198, 151644, 872, 198, 16, 13, 13322, 3501, 400, 32, 11, 425, 11, 356, 11, 422, 3, 304, 3550, 525, 92759, 220, 16, 4982, 10747, 11, 323, 3501, 400, 47, 11, 1207, 3, 3271, 389, 1555, 20632, 400, 1867, 11, 11078, 3, 15576, 13, 576, 8028, 6010, 1948, 1459, 400, 47, 3, 323, 400, 48, 3, 374, 151645, 198, 151644, 77091, 198], lora_request: None, prompt_adapter_request: None.
+INFO 01-22 16:25:13 [logger.py:39] Received request cmpl-46d5cadb759745c89de385de7d57e2eb-1: prompt: '<|im_start|>system\nYour task is to follow a systematic, thorough reasoning process before providing the final solution. This involves analyzing, summarizing, exploring, reassessing, and refining your thought process through multiple iterations. Structure your response into two sections: Thought and Solution. In the Thought section, present your reasoning using the format: "<think>\n {thoughts} </think>\n". Each thought should include detailed analysis, brainstorming, verification, and refinement of ideas. After "</think>\n," in the Solution section, provide the final, logical, and accurate answer, clearly derived from the exploration in the Thought section. If applicable, include the answer in \\boxed{} for closed-form results like multiple choices or mathematical solutions.<|im_end|>\n<|im_start|>user\nThe function $f$ maps the set of positive integers into itself, and satisfies the equation\n\n$$\nf(f(n))+f(n)=2 n+6\n$$\n\nWhat could this function be?<|im_end|>\n<|im_start|>assistant\n', params: SamplingParams(n=1, presence_penalty=0.0, frequency_penalty=0.0, repetition_penalty=1.0, temperature=0.7, top_p=0.95, top_k=20, min_p=0.0, seed=None, stop=[], stop_token_ids=[], bad_words=[], include_stop_str_in_output=False, ignore_eos=False, max_tokens=8192, min_tokens=0, logprobs=None, prompt_logprobs=None, skip_special_tokens=True, spaces_between_special_tokens=True, truncate_prompt_tokens=None, guided_decoding=None, extra_args=None), prompt_token_ids: [151644, 8948, 198, 7771, 3383, 374, 311, 1795, 264, 36438, 11, 17423, 32711, 1882, 1573, 8241, 279, 1590, 6291, 13, 1096, 17601, 41018, 11, 28285, 4849, 11, 23966, 11, 31734, 433, 287, 11, 323, 73185, 697, 3381, 1882, 1526, 5248, 25687, 13, 28596, 697, 2033, 1119, 1378, 14158, 25, 35187, 323, 12478, 13, 758, 279, 35187, 3772, 11, 3042, 697, 32711, 1667, 279, 3561, 25, 330, 151667, 198, 314, 60565, 82, 92, 220, 151668, 198, 3263, 8886, 3381, 1265, 2924, 11682, 6358, 11, 86781, 287, 11, 22901, 11, 323, 72913, 315, 6708, 13, 4636, 330, 151668, 198, 1335, 304, 279, 12478, 3772, 11, 3410, 279, 1590, 11, 19819, 11, 323, 13382, 4226, 11, 9355, 14257, 504, 279, 26403, 304, 279, 35187, 3772, 13, 1416, 8415, 11, 2924, 279, 4226, 304, 1124, 79075, 6257, 369, 7877, 8460, 3059, 1075, 5248, 11454, 476, 35972, 9904, 13, 151645, 198, 151644, 872, 198, 785, 729, 400, 69, 3, 14043, 279, 738, 315, 6785, 25780, 1119, 5086, 11, 323, 67901, 279, 23606, 271, 14085, 198, 69, 955, 1445, 38592, 69, 1445, 11730, 17, 308, 10, 21, 198, 14085, 271, 3838, 1410, 419, 729, 387, 30, 151645, 198, 151644, 77091, 198], lora_request: None, prompt_adapter_request: None.
+INFO 01-22 16:25:13 [async_llm.py:228] Added request cmpl-46d5cadb759745c89de385de7d57e2eb-0.
+INFO 01-22 16:25:13 [async_llm.py:228] Added request cmpl-46d5cadb759745c89de385de7d57e2eb-1.
+INFO 01-22 16:25:13 [logger.py:39] Received request cmpl-1ccb7092e8214ff182b7903e38b4a7eb-0: prompt: '<|im_start|>system\nYour task is to follow a systematic, thorough reasoning process before providing the final solution. This involves analyzing, summarizing, exploring, reassessing, and refining your thought process through multiple iterations. Structure your response into two sections: Thought and Solution. In the Thought section, present your reasoning using the format: "<think>\n {thoughts} </think>\n". Each thought should include detailed analysis, brainstorming, verification, and refinement of ideas. After "</think>\n," in the Solution section, provide the final, logical, and accurate answer, clearly derived from the exploration in the Thought section. If applicable, include the answer in \\boxed{} for closed-form results like multiple choices or mathematical solutions.<|im_end|>\n<|im_start|>user\n7.242. $\\left(16 \\cdot 5^{2 x-1}-2 \\cdot 5^{x-1}-0.048\\right) \\lg \\left(x^{3}+2 x+1\\right)=0$.<|im_end|>\n<|im_start|>assistant\n', params: SamplingParams(n=1, presence_penalty=0.0, frequency_penalty=0.0, repetition_penalty=1.0, temperature=0.7, top_p=0.95, top_k=20, min_p=0.0, seed=None, stop=[], stop_token_ids=[], bad_words=[], include_stop_str_in_output=False, ignore_eos=False, max_tokens=8192, min_tokens=0, logprobs=None, prompt_logprobs=None, skip_special_tokens=True, spaces_between_special_tokens=True, truncate_prompt_tokens=None, guided_decoding=None, extra_args=None), prompt_token_ids: [151644, 8948, 198, 7771, 3383, 374, 311, 1795, 264, 36438, 11, 17423, 32711, 1882, 1573, 8241, 279, 1590, 6291, 13, 1096, 17601, 41018, 11, 28285, 4849, 11, 23966, 11, 31734, 433, 287, 11, 323, 73185, 697, 3381, 1882, 1526, 5248, 25687, 13, 28596, 697, 2033, 1119, 1378, 14158, 25, 35187, 323, 12478, 13, 758, 279, 35187, 3772, 11, 3042, 697, 32711, 1667, 279, 3561, 25, 330, 151667, 198, 314, 60565, 82, 92, 220, 151668, 198, 3263, 8886, 3381, 1265, 2924, 11682, 6358, 11, 86781, 287, 11, 22901, 11, 323, 72913, 315, 6708, 13, 4636, 330, 151668, 198, 1335, 304, 279, 12478, 3772, 11, 3410, 279, 1590, 11, 19819, 11, 323, 13382, 4226, 11, 9355, 14257, 504, 279, 26403, 304, 279, 35187, 3772, 13, 1416, 8415, 11, 2924, 279, 4226, 304, 1124, 79075, 6257, 369, 7877, 8460, 3059, 1075, 5248, 11454, 476, 35972, 9904, 13, 151645, 198, 151644, 872, 198, 22, 13, 17, 19, 17, 13, 57960, 2359, 7, 16, 21, 1124, 50853, 220, 20, 47822, 17, 856, 12, 16, 19732, 17, 1124, 50853, 220, 20, 47822, 87, 12, 16, 19732, 15, 13, 15, 19, 23, 59, 1291, 8, 1124, 11819, 1124, 2359, 2075, 47822, 18, 92, 10, 17, 856, 10, 16, 59, 1291, 11730, 15, 12947, 151645, 198, 151644, 77091, 198], lora_request: None, prompt_adapter_request: None.
+INFO 01-22 16:25:13 [logger.py:39] Received request cmpl-1ccb7092e8214ff182b7903e38b4a7eb-1: prompt: '<|im_start|>system\nYour task is to follow a systematic, thorough reasoning process before providing the final solution. This involves analyzing, summarizing, exploring, reassessing, and refining your thought process through multiple iterations. Structure your response into two sections: Thought and Solution. In the Thought section, present your reasoning using the format: "<think>\n {thoughts} </think>\n". Each thought should include detailed analysis, brainstorming, verification, and refinement of ideas. After "</think>\n," in the Solution section, provide the final, logical, and accurate answer, clearly derived from the exploration in the Thought section. If applicable, include the answer in \\boxed{} for closed-form results like multiple choices or mathematical solutions.<|im_end|>\n<|im_start|>user\n11.005. The plane angle at the vertex of a regular triangular pyramid is $90^{\\circ}$. Find the ratio of the lateral surface area of the pyramid to the area of its base.<|im_end|>\n<|im_start|>assistant\n', params: SamplingParams(n=1, presence_penalty=0.0, frequency_penalty=0.0, repetition_penalty=1.0, temperature=0.7, top_p=0.95, top_k=20, min_p=0.0, seed=None, stop=[], stop_token_ids=[], bad_words=[], include_stop_str_in_output=False, ignore_eos=False, max_tokens=8192, min_tokens=0, logprobs=None, prompt_logprobs=None, skip_special_tokens=True, spaces_between_special_tokens=True, truncate_prompt_tokens=None, guided_decoding=None, extra_args=None), prompt_token_ids: [151644, 8948, 198, 7771, 3383, 374, 311, 1795, 264, 36438, 11, 17423, 32711, 1882, 1573, 8241, 279, 1590, 6291, 13, 1096, 17601, 41018, 11, 28285, 4849, 11, 23966, 11, 31734, 433, 287, 11, 323, 73185, 697, 3381, 1882, 1526, 5248, 25687, 13, 28596, 697, 2033, 1119, 1378, 14158, 25, 35187, 323, 12478, 13, 758, 279, 35187, 3772, 11, 3042, 697, 32711, 1667, 279, 3561, 25, 330, 151667, 198, 314, 60565, 82, 92, 220, 151668, 198, 3263, 8886, 3381, 1265, 2924, 11682, 6358, 11, 86781, 287, 11, 22901, 11, 323, 72913, 315, 6708, 13, 4636, 330, 151668, 198, 1335, 304, 279, 12478, 3772, 11, 3410, 279, 1590, 11, 19819, 11, 323, 13382, 4226, 11, 9355, 14257, 504, 279, 26403, 304, 279, 35187, 3772, 13, 1416, 8415, 11, 2924, 279, 4226, 304, 1124, 79075, 6257, 369, 7877, 8460, 3059, 1075, 5248, 11454, 476, 35972, 9904, 13, 151645, 198, 151644, 872, 198, 16, 16, 13, 15, 15, 20, 13, 576, 11031, 9210, 518, 279, 11936, 315, 264, 5792, 65494, 46797, 374, 400, 24, 15, 61, 35702, 43298, 92, 12947, 7379, 279, 11341, 315, 279, 44469, 7329, 3082, 315, 279, 46797, 311, 279, 3082, 315, 1181, 2331, 13, 151645, 198, 151644, 77091, 198], lora_request: None, prompt_adapter_request: None.
+INFO 01-22 16:25:13 [async_llm.py:228] Added request cmpl-1ccb7092e8214ff182b7903e38b4a7eb-0.
+INFO 01-22 16:25:13 [async_llm.py:228] Added request cmpl-1ccb7092e8214ff182b7903e38b4a7eb-1.
+INFO 01-22 16:25:13 [logger.py:39] Received request cmpl-4356f64940a94bb1b8f5088a40707c6c-0: prompt: '<|im_start|>system\nYour task is to follow a systematic, thorough reasoning process before providing the final solution. This involves analyzing, summarizing, exploring, reassessing, and refining your thought process through multiple iterations. Structure your response into two sections: Thought and Solution. In the Thought section, present your reasoning using the format: "<think>\n {thoughts} </think>\n". Each thought should include detailed analysis, brainstorming, verification, and refinement of ideas. After "</think>\n," in the Solution section, provide the final, logical, and accurate answer, clearly derived from the exploration in the Thought section. If applicable, include the answer in \\boxed{} for closed-form results like multiple choices or mathematical solutions.<|im_end|>\n<|im_start|>user\nA father wants to divide his property among his children: first, he gives 1000 yuan and one-tenth of the remaining property to the eldest child, then 2000 yuan and one-tenth of the remaining property to the second child, then 3000 yuan and one-tenth of the remaining property to the third child, and so on. It turns out that each child receives the same amount of property. The father has $\\qquad$ children.<|im_end|>\n<|im_start|>assistant\n', params: SamplingParams(n=1, presence_penalty=0.0, frequency_penalty=0.0, repetition_penalty=1.0, temperature=0.7, top_p=0.95, top_k=20, min_p=0.0, seed=None, stop=[], stop_token_ids=[], bad_words=[], include_stop_str_in_output=False, ignore_eos=False, max_tokens=8192, min_tokens=0, logprobs=None, prompt_logprobs=None, skip_special_tokens=True, spaces_between_special_tokens=True, truncate_prompt_tokens=None, guided_decoding=None, extra_args=None), prompt_token_ids: [151644, 8948, 198, 7771, 3383, 374, 311, 1795, 264, 36438, 11, 17423, 32711, 1882, 1573, 8241, 279, 1590, 6291, 13, 1096, 17601, 41018, 11, 28285, 4849, 11, 23966, 11, 31734, 433, 287, 11, 323, 73185, 697, 3381, 1882, 1526, 5248, 25687, 13, 28596, 697, 2033, 1119, 1378, 14158, 25, 35187, 323, 12478, 13, 758, 279, 35187, 3772, 11, 3042, 697, 32711, 1667, 279, 3561, 25, 330, 151667, 198, 314, 60565, 82, 92, 220, 151668, 198, 3263, 8886, 3381, 1265, 2924, 11682, 6358, 11, 86781, 287, 11, 22901, 11, 323, 72913, 315, 6708, 13, 4636, 330, 151668, 198, 1335, 304, 279, 12478, 3772, 11, 3410, 279, 1590, 11, 19819, 11, 323, 13382, 4226, 11, 9355, 14257, 504, 279, 26403, 304, 279, 35187, 3772, 13, 1416, 8415, 11, 2924, 279, 4226, 304, 1124, 79075, 6257, 369, 7877, 8460, 3059, 1075, 5248, 11454, 476, 35972, 9904, 13, 151645, 198, 151644, 872, 198, 32, 6981, 6801, 311, 21749, 806, 3343, 4221, 806, 2841, 25, 1156, 11, 566, 6696, 220, 16, 15, 15, 15, 72283, 323, 825, 2385, 20684, 315, 279, 9664, 3343, 311, 279, 73565, 1682, 11, 1221, 220, 17, 15, 15, 15, 72283, 323, 825, 2385, 20684, 315, 279, 9664, 3343, 311, 279, 2086, 1682, 11, 1221, 220, 18, 15, 15, 15, 72283, 323, 825, 2385, 20684, 315, 279, 9664, 3343, 311, 279, 4843, 1682, 11, 323, 773, 389, 13, 1084, 10577, 700, 429, 1817, 1682, 21189, 279, 1852, 3311, 315, 3343, 13, 576, 6981, 702, 57960, 80, 31610, 3, 2841, 13, 151645, 198, 151644, 77091, 198], lora_request: None, prompt_adapter_request: None.
+INFO 01-22 16:25:13 [logger.py:39] Received request cmpl-4356f64940a94bb1b8f5088a40707c6c-1: prompt: '<|im_start|>system\nYour task is to follow a systematic, thorough reasoning process before providing the final solution. This involves analyzing, summarizing, exploring, reassessing, and refining your thought process through multiple iterations. Structure your response into two sections: Thought and Solution. In the Thought section, present your reasoning using the format: "<think>\n {thoughts} </think>\n". Each thought should include detailed analysis, brainstorming, verification, and refinement of ideas. After "</think>\n," in the Solution section, provide the final, logical, and accurate answer, clearly derived from the exploration in the Thought section. If applicable, include the answer in \\boxed{} for closed-form results like multiple choices or mathematical solutions.<|im_end|>\n<|im_start|>user\nExample 11 Let $x>0, y>0, \\sqrt{x}(\\sqrt{x}+2 \\sqrt{y})$ $=\\sqrt{y}(6 \\sqrt{x}+5 \\sqrt{y})$. Find the value of $\\frac{x+\\sqrt{x y}-y}{2 x+\\sqrt{x y}+3 y}$.<|im_end|>\n<|im_start|>assistant\n', params: SamplingParams(n=1, presence_penalty=0.0, frequency_penalty=0.0, repetition_penalty=1.0, temperature=0.7, top_p=0.95, top_k=20, min_p=0.0, seed=None, stop=[], stop_token_ids=[], bad_words=[], include_stop_str_in_output=False, ignore_eos=False, max_tokens=8192, min_tokens=0, logprobs=None, prompt_logprobs=None, skip_special_tokens=True, spaces_between_special_tokens=True, truncate_prompt_tokens=None, guided_decoding=None, extra_args=None), prompt_token_ids: [151644, 8948, 198, 7771, 3383, 374, 311, 1795, 264, 36438, 11, 17423, 32711, 1882, 1573, 8241, 279, 1590, 6291, 13, 1096, 17601, 41018, 11, 28285, 4849, 11, 23966, 11, 31734, 433, 287, 11, 323, 73185, 697, 3381, 1882, 1526, 5248, 25687, 13, 28596, 697, 2033, 1119, 1378, 14158, 25, 35187, 323, 12478, 13, 758, 279, 35187, 3772, 11, 3042, 697, 32711, 1667, 279, 3561, 25, 330, 151667, 198, 314, 60565, 82, 92, 220, 151668, 198, 3263, 8886, 3381, 1265, 2924, 11682, 6358, 11, 86781, 287, 11, 22901, 11, 323, 72913, 315, 6708, 13, 4636, 330, 151668, 198, 1335, 304, 279, 12478, 3772, 11, 3410, 279, 1590, 11, 19819, 11, 323, 13382, 4226, 11, 9355, 14257, 504, 279, 26403, 304, 279, 35187, 3772, 13, 1416, 8415, 11, 2924, 279, 4226, 304, 1124, 79075, 6257, 369, 7877, 8460, 3059, 1075, 5248, 11454, 476, 35972, 9904, 13, 151645, 198, 151644, 872, 198, 13314, 220, 16, 16, 6771, 400, 87, 29, 15, 11, 379, 29, 15, 11, 1124, 26888, 45340, 92, 11520, 26888, 45340, 92, 10, 17, 1124, 26888, 90, 88, 5410, 3, 400, 34433, 26888, 90, 88, 25547, 21, 1124, 26888, 45340, 92, 10, 20, 1124, 26888, 90, 88, 5410, 12947, 7379, 279, 897, 315, 57960, 37018, 45340, 41715, 26888, 45340, 379, 19732, 88, 15170, 17, 856, 41715, 26888, 45340, 379, 92, 10, 18, 379, 92, 12947, 151645, 198, 151644, 77091, 198], lora_request: None, prompt_adapter_request: None.
+INFO 01-22 16:25:13 [async_llm.py:228] Added request cmpl-4356f64940a94bb1b8f5088a40707c6c-0.
+INFO 01-22 16:25:13 [async_llm.py:228] Added request cmpl-4356f64940a94bb1b8f5088a40707c6c-1.
+INFO 01-22 16:25:15 [loggers.py:87] Engine 000: Avg prompt throughput: 763.5 tokens/s, Avg generation throughput: 549.4 tokens/s, Running: 32 reqs, Waiting: 0 reqs, GPU KV cache usage: 6.1%, Prefix cache hit rate: 60.7%
+INFO 01-22 16:25:25 [loggers.py:87] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 2434.8 tokens/s, Running: 32 reqs, Waiting: 0 reqs, GPU KV cache usage: 19.5%, Prefix cache hit rate: 60.7%
+INFO 01-22 16:25:35 [loggers.py:87] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 1725.5 tokens/s, Running: 30 reqs, Waiting: 0 reqs, GPU KV cache usage: 28.1%, Prefix cache hit rate: 60.7%
+INFO 01-22 16:25:36 [launcher.py:74] Shutting down FastAPI HTTP server.
+INFO:     Shutting down
+INFO:     Waiting for connections to close. (CTRL+C to force quit)
+Task exception was never retrieved
+future: <Task finished name='Task-85' coro=<<async_generator_asend without __name__>()> exception=ZMQError('Socket operation on non-socket')>
+Traceback (most recent call last):
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/async_llm.py", line 284, in generate
+    out = q.get_nowait() or await q.get()
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/output_processor.py", line 47, in get
+    await self.ready.wait()
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/asyncio/locks.py", line 214, in wait
+    await fut
+asyncio.exceptions.CancelledError
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/async_llm.py", line 295, in generate
+    await self.abort(request_id)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/async_llm.py", line 352, in abort
+    await self.engine_core.abort_requests_async(request_ids)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/core_client.py", line 702, in abort_requests_async
+    await self._send_input(EngineCoreRequestType.ABORT, request_ids)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/zmq/_future.py", line 542, in _add_send_event
+    r = send(msg, **nowait_kwargs)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/zmq/sugar/socket.py", line 749, in send_multipart
+    self.send(msg, zmq.SNDMORE | flags, copy=copy, track=track)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/zmq/sugar/socket.py", line 698, in send
+    return super().send(data, flags=flags, copy=copy, track=track)
+  File "zmq/backend/cython/_zmq.py", line 1152, in zmq.backend.cython._zmq.Socket.send
+  File "zmq/backend/cython/_zmq.py", line 1213, in zmq.backend.cython._zmq.Socket.send
+  File "zmq/backend/cython/_zmq.py", line 1473, in zmq.backend.cython._zmq._send_copy
+  File "zmq/backend/cython/_zmq.py", line 1468, in zmq.backend.cython._zmq._send_copy
+  File "zmq/backend/cython/_zmq.py", line 190, in zmq.backend.cython._zmq._check_rc
+zmq.error.ZMQError: Socket operation on non-socket
+Task exception was never retrieved
+future: <Task finished name='Task-86' coro=<<async_generator_asend without __name__>()> exception=ZMQError('Socket operation on non-socket')>
+Traceback (most recent call last):
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/async_llm.py", line 284, in generate
+    out = q.get_nowait() or await q.get()
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/output_processor.py", line 47, in get
+    await self.ready.wait()
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/asyncio/locks.py", line 214, in wait
+    await fut
+asyncio.exceptions.CancelledError
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/async_llm.py", line 295, in generate
+    await self.abort(request_id)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/async_llm.py", line 352, in abort
+    await self.engine_core.abort_requests_async(request_ids)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/core_client.py", line 702, in abort_requests_async
+    await self._send_input(EngineCoreRequestType.ABORT, request_ids)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/zmq/_future.py", line 542, in _add_send_event
+    r = send(msg, **nowait_kwargs)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/zmq/sugar/socket.py", line 749, in send_multipart
+    self.send(msg, zmq.SNDMORE | flags, copy=copy, track=track)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/zmq/sugar/socket.py", line 698, in send
+    return super().send(data, flags=flags, copy=copy, track=track)
+  File "zmq/backend/cython/_zmq.py", line 1152, in zmq.backend.cython._zmq.Socket.send
+  File "zmq/backend/cython/_zmq.py", line 1213, in zmq.backend.cython._zmq.Socket.send
+  File "zmq/backend/cython/_zmq.py", line 1473, in zmq.backend.cython._zmq._send_copy
+  File "zmq/backend/cython/_zmq.py", line 1468, in zmq.backend.cython._zmq._send_copy
+  File "zmq/backend/cython/_zmq.py", line 190, in zmq.backend.cython._zmq._check_rc
+zmq.error.ZMQError: Socket operation on non-socket
+Task exception was never retrieved
+future: <Task finished name='Task-87' coro=<<async_generator_asend without __name__>()> exception=ZMQError('Socket operation on non-socket')>
+Traceback (most recent call last):
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/async_llm.py", line 284, in generate
+    out = q.get_nowait() or await q.get()
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/output_processor.py", line 47, in get
+    await self.ready.wait()
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/asyncio/locks.py", line 214, in wait
+    await fut
+asyncio.exceptions.CancelledError
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/async_llm.py", line 295, in generate
+    await self.abort(request_id)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/async_llm.py", line 352, in abort
+    await self.engine_core.abort_requests_async(request_ids)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/core_client.py", line 702, in abort_requests_async
+    await self._send_input(EngineCoreRequestType.ABORT, request_ids)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/zmq/_future.py", line 542, in _add_send_event
+    r = send(msg, **nowait_kwargs)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/zmq/sugar/socket.py", line 749, in send_multipart
+    self.send(msg, zmq.SNDMORE | flags, copy=copy, track=track)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/zmq/sugar/socket.py", line 698, in send
+    return super().send(data, flags=flags, copy=copy, track=track)
+  File "zmq/backend/cython/_zmq.py", line 1152, in zmq.backend.cython._zmq.Socket.send
+  File "zmq/backend/cython/_zmq.py", line 1213, in zmq.backend.cython._zmq.Socket.send
+  File "zmq/backend/cython/_zmq.py", line 1473, in zmq.backend.cython._zmq._send_copy
+  File "zmq/backend/cython/_zmq.py", line 1468, in zmq.backend.cython._zmq._send_copy
+  File "zmq/backend/cython/_zmq.py", line 190, in zmq.backend.cython._zmq._check_rc
+zmq.error.ZMQError: Socket operation on non-socket
+Task exception was never retrieved
+future: <Task finished name='Task-88' coro=<<async_generator_asend without __name__>()> exception=ZMQError('Socket operation on non-socket')>
+Traceback (most recent call last):
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/async_llm.py", line 284, in generate
+    out = q.get_nowait() or await q.get()
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/output_processor.py", line 47, in get
+    await self.ready.wait()
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/asyncio/locks.py", line 214, in wait
+    await fut
+asyncio.exceptions.CancelledError
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/async_llm.py", line 295, in generate
+    await self.abort(request_id)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/async_llm.py", line 352, in abort
+    await self.engine_core.abort_requests_async(request_ids)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/core_client.py", line 702, in abort_requests_async
+    await self._send_input(EngineCoreRequestType.ABORT, request_ids)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/zmq/_future.py", line 542, in _add_send_event
+    r = send(msg, **nowait_kwargs)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/zmq/sugar/socket.py", line 749, in send_multipart
+    self.send(msg, zmq.SNDMORE | flags, copy=copy, track=track)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/zmq/sugar/socket.py", line 698, in send
+    return super().send(data, flags=flags, copy=copy, track=track)
+  File "zmq/backend/cython/_zmq.py", line 1152, in zmq.backend.cython._zmq.Socket.send
+  File "zmq/backend/cython/_zmq.py", line 1213, in zmq.backend.cython._zmq.Socket.send
+  File "zmq/backend/cython/_zmq.py", line 1473, in zmq.backend.cython._zmq._send_copy
+  File "zmq/backend/cython/_zmq.py", line 1468, in zmq.backend.cython._zmq._send_copy
+  File "zmq/backend/cython/_zmq.py", line 190, in zmq.backend.cython._zmq._check_rc
+zmq.error.ZMQError: Socket operation on non-socket
+INFO:     Waiting for application shutdown.
+Task exception was never retrieved
+future: <Task finished name='Task-73' coro=<<async_generator_asend without __name__>()> exception=ZMQError('Socket operation on non-socket')>
+Traceback (most recent call last):
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/async_llm.py", line 284, in generate
+    out = q.get_nowait() or await q.get()
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/output_processor.py", line 47, in get
+    await self.ready.wait()
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/asyncio/locks.py", line 214, in wait
+    await fut
+asyncio.exceptions.CancelledError
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/async_llm.py", line 295, in generate
+    await self.abort(request_id)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/async_llm.py", line 352, in abort
+    await self.engine_core.abort_requests_async(request_ids)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/core_client.py", line 702, in abort_requests_async
+    await self._send_input(EngineCoreRequestType.ABORT, request_ids)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/zmq/_future.py", line 542, in _add_send_event
+    r = send(msg, **nowait_kwargs)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/zmq/sugar/socket.py", line 749, in send_multipart
+    self.send(msg, zmq.SNDMORE | flags, copy=copy, track=track)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/zmq/sugar/socket.py", line 698, in send
+    return super().send(data, flags=flags, copy=copy, track=track)
+  File "zmq/backend/cython/_zmq.py", line 1152, in zmq.backend.cython._zmq.Socket.send
+  File "zmq/backend/cython/_zmq.py", line 1213, in zmq.backend.cython._zmq.Socket.send
+  File "zmq/backend/cython/_zmq.py", line 1473, in zmq.backend.cython._zmq._send_copy
+  File "zmq/backend/cython/_zmq.py", line 1468, in zmq.backend.cython._zmq._send_copy
+  File "zmq/backend/cython/_zmq.py", line 190, in zmq.backend.cython._zmq._check_rc
+zmq.error.ZMQError: Socket operation on non-socket
+Task exception was never retrieved
+future: <Task finished name='Task-74' coro=<<async_generator_asend without __name__>()> exception=ZMQError('Socket operation on non-socket')>
+Traceback (most recent call last):
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/async_llm.py", line 284, in generate
+    out = q.get_nowait() or await q.get()
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/output_processor.py", line 47, in get
+    await self.ready.wait()
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/asyncio/locks.py", line 214, in wait
+    await fut
+asyncio.exceptions.CancelledError
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/async_llm.py", line 295, in generate
+    await self.abort(request_id)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/async_llm.py", line 352, in abort
+    await self.engine_core.abort_requests_async(request_ids)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/core_client.py", line 702, in abort_requests_async
+    await self._send_input(EngineCoreRequestType.ABORT, request_ids)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/zmq/_future.py", line 542, in _add_send_event
+    r = send(msg, **nowait_kwargs)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/zmq/sugar/socket.py", line 749, in send_multipart
+    self.send(msg, zmq.SNDMORE | flags, copy=copy, track=track)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/zmq/sugar/socket.py", line 698, in send
+    return super().send(data, flags=flags, copy=copy, track=track)
+  File "zmq/backend/cython/_zmq.py", line 1152, in zmq.backend.cython._zmq.Socket.send
+  File "zmq/backend/cython/_zmq.py", line 1213, in zmq.backend.cython._zmq.Socket.send
+  File "zmq/backend/cython/_zmq.py", line 1473, in zmq.backend.cython._zmq._send_copy
+  File "zmq/backend/cython/_zmq.py", line 1468, in zmq.backend.cython._zmq._send_copy
+  File "zmq/backend/cython/_zmq.py", line 190, in zmq.backend.cython._zmq._check_rc
+zmq.error.ZMQError: Socket operation on non-socket
+Task exception was never retrieved
+future: <Task finished name='Task-77' coro=<<async_generator_asend without __name__>()> exception=ZMQError('Socket operation on non-socket')>
+Traceback (most recent call last):
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/async_llm.py", line 284, in generate
+    out = q.get_nowait() or await q.get()
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/output_processor.py", line 47, in get
+    await self.ready.wait()
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/asyncio/locks.py", line 214, in wait
+    await fut
+asyncio.exceptions.CancelledError
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/async_llm.py", line 295, in generate
+    await self.abort(request_id)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/async_llm.py", line 352, in abort
+    await self.engine_core.abort_requests_async(request_ids)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/core_client.py", line 702, in abort_requests_async
+    await self._send_input(EngineCoreRequestType.ABORT, request_ids)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/zmq/_future.py", line 542, in _add_send_event
+    r = send(msg, **nowait_kwargs)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/zmq/sugar/socket.py", line 749, in send_multipart
+    self.send(msg, zmq.SNDMORE | flags, copy=copy, track=track)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/zmq/sugar/socket.py", line 698, in send
+    return super().send(data, flags=flags, copy=copy, track=track)
+  File "zmq/backend/cython/_zmq.py", line 1152, in zmq.backend.cython._zmq.Socket.send
+  File "zmq/backend/cython/_zmq.py", line 1213, in zmq.backend.cython._zmq.Socket.send
+  File "zmq/backend/cython/_zmq.py", line 1473, in zmq.backend.cython._zmq._send_copy
+  File "zmq/backend/cython/_zmq.py", line 1468, in zmq.backend.cython._zmq._send_copy
+  File "zmq/backend/cython/_zmq.py", line 190, in zmq.backend.cython._zmq._check_rc
+zmq.error.ZMQError: Socket operation on non-socket
+Task exception was never retrieved
+future: <Task finished name='Task-78' coro=<<async_generator_asend without __name__>()> exception=ZMQError('Socket operation on non-socket')>
+Traceback (most recent call last):
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/async_llm.py", line 284, in generate
+    out = q.get_nowait() or await q.get()
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/output_processor.py", line 47, in get
+    await self.ready.wait()
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/asyncio/locks.py", line 214, in wait
+    await fut
+asyncio.exceptions.CancelledError
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/async_llm.py", line 295, in generate
+    await self.abort(request_id)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/async_llm.py", line 352, in abort
+    await self.engine_core.abort_requests_async(request_ids)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/core_client.py", line 702, in abort_requests_async
+    await self._send_input(EngineCoreRequestType.ABORT, request_ids)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/zmq/_future.py", line 542, in _add_send_event
+    r = send(msg, **nowait_kwargs)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/zmq/sugar/socket.py", line 749, in send_multipart
+    self.send(msg, zmq.SNDMORE | flags, copy=copy, track=track)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/zmq/sugar/socket.py", line 698, in send
+    return super().send(data, flags=flags, copy=copy, track=track)
+  File "zmq/backend/cython/_zmq.py", line 1152, in zmq.backend.cython._zmq.Socket.send
+  File "zmq/backend/cython/_zmq.py", line 1213, in zmq.backend.cython._zmq.Socket.send
+  File "zmq/backend/cython/_zmq.py", line 1473, in zmq.backend.cython._zmq._send_copy
+  File "zmq/backend/cython/_zmq.py", line 1468, in zmq.backend.cython._zmq._send_copy
+  File "zmq/backend/cython/_zmq.py", line 190, in zmq.backend.cython._zmq._check_rc
+zmq.error.ZMQError: Socket operation on non-socket
+Task exception was never retrieved
+future: <Task finished name='Task-65' coro=<<async_generator_asend without __name__>()> exception=ZMQError('Socket operation on non-socket')>
+Traceback (most recent call last):
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/async_llm.py", line 284, in generate
+    out = q.get_nowait() or await q.get()
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/output_processor.py", line 47, in get
+    await self.ready.wait()
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/asyncio/locks.py", line 214, in wait
+    await fut
+asyncio.exceptions.CancelledError
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/async_llm.py", line 295, in generate
+    await self.abort(request_id)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/async_llm.py", line 352, in abort
+    await self.engine_core.abort_requests_async(request_ids)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/core_client.py", line 702, in abort_requests_async
+    await self._send_input(EngineCoreRequestType.ABORT, request_ids)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/zmq/_future.py", line 542, in _add_send_event
+    r = send(msg, **nowait_kwargs)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/zmq/sugar/socket.py", line 749, in send_multipart
+    self.send(msg, zmq.SNDMORE | flags, copy=copy, track=track)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/zmq/sugar/socket.py", line 698, in send
+    return super().send(data, flags=flags, copy=copy, track=track)
+  File "zmq/backend/cython/_zmq.py", line 1152, in zmq.backend.cython._zmq.Socket.send
+  File "zmq/backend/cython/_zmq.py", line 1213, in zmq.backend.cython._zmq.Socket.send
+  File "zmq/backend/cython/_zmq.py", line 1473, in zmq.backend.cython._zmq._send_copy
+  File "zmq/backend/cython/_zmq.py", line 1468, in zmq.backend.cython._zmq._send_copy
+  File "zmq/backend/cython/_zmq.py", line 190, in zmq.backend.cython._zmq._check_rc
+zmq.error.ZMQError: Socket operation on non-socket
+Task exception was never retrieved
+future: <Task finished name='Task-66' coro=<<async_generator_asend without __name__>()> exception=ZMQError('Socket operation on non-socket')>
+Traceback (most recent call last):
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/async_llm.py", line 284, in generate
+    out = q.get_nowait() or await q.get()
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/output_processor.py", line 47, in get
+    await self.ready.wait()
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/asyncio/locks.py", line 214, in wait
+    await fut
+asyncio.exceptions.CancelledError
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/async_llm.py", line 295, in generate
+    await self.abort(request_id)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/async_llm.py", line 352, in abort
+    await self.engine_core.abort_requests_async(request_ids)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/core_client.py", line 702, in abort_requests_async
+    await self._send_input(EngineCoreRequestType.ABORT, request_ids)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/zmq/_future.py", line 542, in _add_send_event
+    r = send(msg, **nowait_kwargs)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/zmq/sugar/socket.py", line 749, in send_multipart
+    self.send(msg, zmq.SNDMORE | flags, copy=copy, track=track)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/zmq/sugar/socket.py", line 698, in send
+    return super().send(data, flags=flags, copy=copy, track=track)
+  File "zmq/backend/cython/_zmq.py", line 1152, in zmq.backend.cython._zmq.Socket.send
+  File "zmq/backend/cython/_zmq.py", line 1213, in zmq.backend.cython._zmq.Socket.send
+  File "zmq/backend/cython/_zmq.py", line 1473, in zmq.backend.cython._zmq._send_copy
+  File "zmq/backend/cython/_zmq.py", line 1468, in zmq.backend.cython._zmq._send_copy
+  File "zmq/backend/cython/_zmq.py", line 190, in zmq.backend.cython._zmq._check_rc
+zmq.error.ZMQError: Socket operation on non-socket
+Task exception was never retrieved
+future: <Task finished name='Task-63' coro=<<async_generator_asend without __name__>()> exception=ZMQError('Socket operation on non-socket')>
+Traceback (most recent call last):
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/async_llm.py", line 284, in generate
+    out = q.get_nowait() or await q.get()
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/output_processor.py", line 47, in get
+    await self.ready.wait()
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/asyncio/locks.py", line 214, in wait
+    await fut
+asyncio.exceptions.CancelledError
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/async_llm.py", line 295, in generate
+    await self.abort(request_id)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/async_llm.py", line 352, in abort
+    await self.engine_core.abort_requests_async(request_ids)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/core_client.py", line 702, in abort_requests_async
+    await self._send_input(EngineCoreRequestType.ABORT, request_ids)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/zmq/_future.py", line 542, in _add_send_event
+    r = send(msg, **nowait_kwargs)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/zmq/sugar/socket.py", line 749, in send_multipart
+    self.send(msg, zmq.SNDMORE | flags, copy=copy, track=track)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/zmq/sugar/socket.py", line 698, in send
+    return super().send(data, flags=flags, copy=copy, track=track)
+  File "zmq/backend/cython/_zmq.py", line 1152, in zmq.backend.cython._zmq.Socket.send
+  File "zmq/backend/cython/_zmq.py", line 1213, in zmq.backend.cython._zmq.Socket.send
+  File "zmq/backend/cython/_zmq.py", line 1473, in zmq.backend.cython._zmq._send_copy
+  File "zmq/backend/cython/_zmq.py", line 1468, in zmq.backend.cython._zmq._send_copy
+  File "zmq/backend/cython/_zmq.py", line 190, in zmq.backend.cython._zmq._check_rc
+zmq.error.ZMQError: Socket operation on non-socket
+Task exception was never retrieved
+future: <Task finished name='Task-64' coro=<<async_generator_asend without __name__>()> exception=ZMQError('Socket operation on non-socket')>
+Traceback (most recent call last):
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/async_llm.py", line 284, in generate
+    out = q.get_nowait() or await q.get()
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/output_processor.py", line 47, in get
+    await self.ready.wait()
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/asyncio/locks.py", line 214, in wait
+    await fut
+asyncio.exceptions.CancelledError
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/async_llm.py", line 295, in generate
+    await self.abort(request_id)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/async_llm.py", line 352, in abort
+    await self.engine_core.abort_requests_async(request_ids)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/core_client.py", line 702, in abort_requests_async
+    await self._send_input(EngineCoreRequestType.ABORT, request_ids)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/zmq/_future.py", line 542, in _add_send_event
+    r = send(msg, **nowait_kwargs)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/zmq/sugar/socket.py", line 749, in send_multipart
+    self.send(msg, zmq.SNDMORE | flags, copy=copy, track=track)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/zmq/sugar/socket.py", line 698, in send
+    return super().send(data, flags=flags, copy=copy, track=track)
+  File "zmq/backend/cython/_zmq.py", line 1152, in zmq.backend.cython._zmq.Socket.send
+  File "zmq/backend/cython/_zmq.py", line 1213, in zmq.backend.cython._zmq.Socket.send
+  File "zmq/backend/cython/_zmq.py", line 1473, in zmq.backend.cython._zmq._send_copy
+  File "zmq/backend/cython/_zmq.py", line 1468, in zmq.backend.cython._zmq._send_copy
+  File "zmq/backend/cython/_zmq.py", line 190, in zmq.backend.cython._zmq._check_rc
+zmq.error.ZMQError: Socket operation on non-socket
+Task exception was never retrieved
+future: <Task finished name='Task-59' coro=<<async_generator_asend without __name__>()> exception=ZMQError('Socket operation on non-socket')>
+Traceback (most recent call last):
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/async_llm.py", line 284, in generate
+    out = q.get_nowait() or await q.get()
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/output_processor.py", line 47, in get
+    await self.ready.wait()
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/asyncio/locks.py", line 214, in wait
+    await fut
+asyncio.exceptions.CancelledError
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/async_llm.py", line 295, in generate
+    await self.abort(request_id)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/async_llm.py", line 352, in abort
+    await self.engine_core.abort_requests_async(request_ids)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/core_client.py", line 702, in abort_requests_async
+    await self._send_input(EngineCoreRequestType.ABORT, request_ids)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/zmq/_future.py", line 542, in _add_send_event
+    r = send(msg, **nowait_kwargs)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/zmq/sugar/socket.py", line 749, in send_multipart
+    self.send(msg, zmq.SNDMORE | flags, copy=copy, track=track)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/zmq/sugar/socket.py", line 698, in send
+    return super().send(data, flags=flags, copy=copy, track=track)
+  File "zmq/backend/cython/_zmq.py", line 1152, in zmq.backend.cython._zmq.Socket.send
+  File "zmq/backend/cython/_zmq.py", line 1213, in zmq.backend.cython._zmq.Socket.send
+  File "zmq/backend/cython/_zmq.py", line 1473, in zmq.backend.cython._zmq._send_copy
+  File "zmq/backend/cython/_zmq.py", line 1468, in zmq.backend.cython._zmq._send_copy
+  File "zmq/backend/cython/_zmq.py", line 190, in zmq.backend.cython._zmq._check_rc
+zmq.error.ZMQError: Socket operation on non-socket
+Task exception was never retrieved
+future: <Task finished name='Task-60' coro=<<async_generator_asend without __name__>()> exception=ZMQError('Socket operation on non-socket')>
+Traceback (most recent call last):
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/async_llm.py", line 284, in generate
+    out = q.get_nowait() or await q.get()
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/output_processor.py", line 47, in get
+    await self.ready.wait()
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/asyncio/locks.py", line 214, in wait
+    await fut
+asyncio.exceptions.CancelledError
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/async_llm.py", line 295, in generate
+    await self.abort(request_id)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/async_llm.py", line 352, in abort
+    await self.engine_core.abort_requests_async(request_ids)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/core_client.py", line 702, in abort_requests_async
+    await self._send_input(EngineCoreRequestType.ABORT, request_ids)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/zmq/_future.py", line 542, in _add_send_event
+    r = send(msg, **nowait_kwargs)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/zmq/sugar/socket.py", line 749, in send_multipart
+    self.send(msg, zmq.SNDMORE | flags, copy=copy, track=track)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/zmq/sugar/socket.py", line 698, in send
+    return super().send(data, flags=flags, copy=copy, track=track)
+  File "zmq/backend/cython/_zmq.py", line 1152, in zmq.backend.cython._zmq.Socket.send
+  File "zmq/backend/cython/_zmq.py", line 1213, in zmq.backend.cython._zmq.Socket.send
+  File "zmq/backend/cython/_zmq.py", line 1473, in zmq.backend.cython._zmq._send_copy
+  File "zmq/backend/cython/_zmq.py", line 1468, in zmq.backend.cython._zmq._send_copy
+  File "zmq/backend/cython/_zmq.py", line 190, in zmq.backend.cython._zmq._check_rc
+zmq.error.ZMQError: Socket operation on non-socket
+Task exception was never retrieved
+future: <Task finished name='Task-61' coro=<<async_generator_asend without __name__>()> exception=ZMQError('Socket operation on non-socket')>
+Traceback (most recent call last):
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/async_llm.py", line 284, in generate
+    out = q.get_nowait() or await q.get()
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/output_processor.py", line 47, in get
+    await self.ready.wait()
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/asyncio/locks.py", line 214, in wait
+    await fut
+asyncio.exceptions.CancelledError
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/async_llm.py", line 295, in generate
+    await self.abort(request_id)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/async_llm.py", line 352, in abort
+    await self.engine_core.abort_requests_async(request_ids)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/core_client.py", line 702, in abort_requests_async
+    await self._send_input(EngineCoreRequestType.ABORT, request_ids)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/zmq/_future.py", line 542, in _add_send_event
+    r = send(msg, **nowait_kwargs)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/zmq/sugar/socket.py", line 749, in send_multipart
+    self.send(msg, zmq.SNDMORE | flags, copy=copy, track=track)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/zmq/sugar/socket.py", line 698, in send
+    return super().send(data, flags=flags, copy=copy, track=track)
+  File "zmq/backend/cython/_zmq.py", line 1152, in zmq.backend.cython._zmq.Socket.send
+  File "zmq/backend/cython/_zmq.py", line 1213, in zmq.backend.cython._zmq.Socket.send
+  File "zmq/backend/cython/_zmq.py", line 1473, in zmq.backend.cython._zmq._send_copy
+  File "zmq/backend/cython/_zmq.py", line 1468, in zmq.backend.cython._zmq._send_copy
+  File "zmq/backend/cython/_zmq.py", line 190, in zmq.backend.cython._zmq._check_rc
+zmq.error.ZMQError: Socket operation on non-socket
+Task exception was never retrieved
+future: <Task finished name='Task-62' coro=<<async_generator_asend without __name__>()> exception=ZMQError('Socket operation on non-socket')>
+Traceback (most recent call last):
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/async_llm.py", line 284, in generate
+    out = q.get_nowait() or await q.get()
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/output_processor.py", line 47, in get
+    await self.ready.wait()
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/asyncio/locks.py", line 214, in wait
+    await fut
+asyncio.exceptions.CancelledError
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/async_llm.py", line 295, in generate
+    await self.abort(request_id)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/async_llm.py", line 352, in abort
+    await self.engine_core.abort_requests_async(request_ids)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/core_client.py", line 702, in abort_requests_async
+    await self._send_input(EngineCoreRequestType.ABORT, request_ids)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/zmq/_future.py", line 542, in _add_send_event
+    r = send(msg, **nowait_kwargs)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/zmq/sugar/socket.py", line 749, in send_multipart
+    self.send(msg, zmq.SNDMORE | flags, copy=copy, track=track)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/zmq/sugar/socket.py", line 698, in send
+    return super().send(data, flags=flags, copy=copy, track=track)
+  File "zmq/backend/cython/_zmq.py", line 1152, in zmq.backend.cython._zmq.Socket.send
+  File "zmq/backend/cython/_zmq.py", line 1213, in zmq.backend.cython._zmq.Socket.send
+  File "zmq/backend/cython/_zmq.py", line 1473, in zmq.backend.cython._zmq._send_copy
+  File "zmq/backend/cython/_zmq.py", line 1468, in zmq.backend.cython._zmq._send_copy
+  File "zmq/backend/cython/_zmq.py", line 190, in zmq.backend.cython._zmq._check_rc
+zmq.error.ZMQError: Socket operation on non-socket
+Task exception was never retrieved
+future: <Task finished name='Task-53' coro=<<async_generator_asend without __name__>()> exception=ZMQError('Socket operation on non-socket')>
+Traceback (most recent call last):
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/async_llm.py", line 284, in generate
+    out = q.get_nowait() or await q.get()
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/output_processor.py", line 47, in get
+    await self.ready.wait()
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/asyncio/locks.py", line 214, in wait
+    await fut
+asyncio.exceptions.CancelledError
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/async_llm.py", line 295, in generate
+    await self.abort(request_id)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/async_llm.py", line 352, in abort
+    await self.engine_core.abort_requests_async(request_ids)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/core_client.py", line 702, in abort_requests_async
+    await self._send_input(EngineCoreRequestType.ABORT, request_ids)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/zmq/_future.py", line 542, in _add_send_event
+    r = send(msg, **nowait_kwargs)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/zmq/sugar/socket.py", line 749, in send_multipart
+    self.send(msg, zmq.SNDMORE | flags, copy=copy, track=track)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/zmq/sugar/socket.py", line 698, in send
+    return super().send(data, flags=flags, copy=copy, track=track)
+  File "zmq/backend/cython/_zmq.py", line 1152, in zmq.backend.cython._zmq.Socket.send
+  File "zmq/backend/cython/_zmq.py", line 1213, in zmq.backend.cython._zmq.Socket.send
+  File "zmq/backend/cython/_zmq.py", line 1473, in zmq.backend.cython._zmq._send_copy
+  File "zmq/backend/cython/_zmq.py", line 1468, in zmq.backend.cython._zmq._send_copy
+  File "zmq/backend/cython/_zmq.py", line 190, in zmq.backend.cython._zmq._check_rc
+zmq.error.ZMQError: Socket operation on non-socket
+Task exception was never retrieved
+future: <Task finished name='Task-54' coro=<<async_generator_asend without __name__>()> exception=ZMQError('Socket operation on non-socket')>
+Traceback (most recent call last):
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/async_llm.py", line 284, in generate
+    out = q.get_nowait() or await q.get()
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/output_processor.py", line 47, in get
+    await self.ready.wait()
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/asyncio/locks.py", line 214, in wait
+    await fut
+asyncio.exceptions.CancelledError
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/async_llm.py", line 295, in generate
+    await self.abort(request_id)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/async_llm.py", line 352, in abort
+    await self.engine_core.abort_requests_async(request_ids)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/core_client.py", line 702, in abort_requests_async
+    await self._send_input(EngineCoreRequestType.ABORT, request_ids)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/zmq/_future.py", line 542, in _add_send_event
+    r = send(msg, **nowait_kwargs)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/zmq/sugar/socket.py", line 749, in send_multipart
+    self.send(msg, zmq.SNDMORE | flags, copy=copy, track=track)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/zmq/sugar/socket.py", line 698, in send
+    return super().send(data, flags=flags, copy=copy, track=track)
+  File "zmq/backend/cython/_zmq.py", line 1152, in zmq.backend.cython._zmq.Socket.send
+  File "zmq/backend/cython/_zmq.py", line 1213, in zmq.backend.cython._zmq.Socket.send
+  File "zmq/backend/cython/_zmq.py", line 1473, in zmq.backend.cython._zmq._send_copy
+  File "zmq/backend/cython/_zmq.py", line 1468, in zmq.backend.cython._zmq._send_copy
+  File "zmq/backend/cython/_zmq.py", line 190, in zmq.backend.cython._zmq._check_rc
+zmq.error.ZMQError: Socket operation on non-socket
+Task exception was never retrieved
+future: <Task finished name='Task-35' coro=<<async_generator_asend without __name__>()> exception=ZMQError('Socket operation on non-socket')>
+Traceback (most recent call last):
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/async_llm.py", line 284, in generate
+    out = q.get_nowait() or await q.get()
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/output_processor.py", line 47, in get
+    await self.ready.wait()
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/asyncio/locks.py", line 214, in wait
+    await fut
+asyncio.exceptions.CancelledError
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/async_llm.py", line 295, in generate
+    await self.abort(request_id)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/async_llm.py", line 352, in abort
+    await self.engine_core.abort_requests_async(request_ids)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/core_client.py", line 702, in abort_requests_async
+    await self._send_input(EngineCoreRequestType.ABORT, request_ids)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/zmq/_future.py", line 542, in _add_send_event
+    r = send(msg, **nowait_kwargs)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/zmq/sugar/socket.py", line 749, in send_multipart
+    self.send(msg, zmq.SNDMORE | flags, copy=copy, track=track)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/zmq/sugar/socket.py", line 698, in send
+    return super().send(data, flags=flags, copy=copy, track=track)
+  File "zmq/backend/cython/_zmq.py", line 1152, in zmq.backend.cython._zmq.Socket.send
+  File "zmq/backend/cython/_zmq.py", line 1213, in zmq.backend.cython._zmq.Socket.send
+  File "zmq/backend/cython/_zmq.py", line 1473, in zmq.backend.cython._zmq._send_copy
+  File "zmq/backend/cython/_zmq.py", line 1468, in zmq.backend.cython._zmq._send_copy
+  File "zmq/backend/cython/_zmq.py", line 190, in zmq.backend.cython._zmq._check_rc
+zmq.error.ZMQError: Socket operation on non-socket
+Task exception was never retrieved
+future: <Task finished name='Task-36' coro=<<async_generator_asend without __name__>()> exception=ZMQError('Socket operation on non-socket')>
+Traceback (most recent call last):
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/async_llm.py", line 284, in generate
+    out = q.get_nowait() or await q.get()
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/output_processor.py", line 47, in get
+    await self.ready.wait()
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/asyncio/locks.py", line 214, in wait
+    await fut
+asyncio.exceptions.CancelledError
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/async_llm.py", line 295, in generate
+    await self.abort(request_id)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/async_llm.py", line 352, in abort
+    await self.engine_core.abort_requests_async(request_ids)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/core_client.py", line 702, in abort_requests_async
+    await self._send_input(EngineCoreRequestType.ABORT, request_ids)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/zmq/_future.py", line 542, in _add_send_event
+    r = send(msg, **nowait_kwargs)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/zmq/sugar/socket.py", line 749, in send_multipart
+    self.send(msg, zmq.SNDMORE | flags, copy=copy, track=track)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/zmq/sugar/socket.py", line 698, in send
+    return super().send(data, flags=flags, copy=copy, track=track)
+  File "zmq/backend/cython/_zmq.py", line 1152, in zmq.backend.cython._zmq.Socket.send
+  File "zmq/backend/cython/_zmq.py", line 1213, in zmq.backend.cython._zmq.Socket.send
+  File "zmq/backend/cython/_zmq.py", line 1473, in zmq.backend.cython._zmq._send_copy
+  File "zmq/backend/cython/_zmq.py", line 1468, in zmq.backend.cython._zmq._send_copy
+  File "zmq/backend/cython/_zmq.py", line 190, in zmq.backend.cython._zmq._check_rc
+zmq.error.ZMQError: Socket operation on non-socket
+Task exception was never retrieved
+future: <Task finished name='Task-57' coro=<<async_generator_asend without __name__>()> exception=ZMQError('Socket operation on non-socket')>
+Traceback (most recent call last):
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/async_llm.py", line 284, in generate
+    out = q.get_nowait() or await q.get()
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/output_processor.py", line 47, in get
+    await self.ready.wait()
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/asyncio/locks.py", line 214, in wait
+    await fut
+asyncio.exceptions.CancelledError
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/async_llm.py", line 295, in generate
+    await self.abort(request_id)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/async_llm.py", line 352, in abort
+    await self.engine_core.abort_requests_async(request_ids)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/core_client.py", line 702, in abort_requests_async
+    await self._send_input(EngineCoreRequestType.ABORT, request_ids)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/zmq/_future.py", line 542, in _add_send_event
+    r = send(msg, **nowait_kwargs)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/zmq/sugar/socket.py", line 749, in send_multipart
+    self.send(msg, zmq.SNDMORE | flags, copy=copy, track=track)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/zmq/sugar/socket.py", line 698, in send
+    return super().send(data, flags=flags, copy=copy, track=track)
+  File "zmq/backend/cython/_zmq.py", line 1152, in zmq.backend.cython._zmq.Socket.send
+  File "zmq/backend/cython/_zmq.py", line 1213, in zmq.backend.cython._zmq.Socket.send
+  File "zmq/backend/cython/_zmq.py", line 1473, in zmq.backend.cython._zmq._send_copy
+  File "zmq/backend/cython/_zmq.py", line 1468, in zmq.backend.cython._zmq._send_copy
+  File "zmq/backend/cython/_zmq.py", line 190, in zmq.backend.cython._zmq._check_rc
+zmq.error.ZMQError: Socket operation on non-socket
+Task exception was never retrieved
+future: <Task finished name='Task-58' coro=<<async_generator_asend without __name__>()> exception=ZMQError('Socket operation on non-socket')>
+Traceback (most recent call last):
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/async_llm.py", line 284, in generate
+    out = q.get_nowait() or await q.get()
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/output_processor.py", line 47, in get
+    await self.ready.wait()
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/asyncio/locks.py", line 214, in wait
+    await fut
+asyncio.exceptions.CancelledError
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/async_llm.py", line 295, in generate
+    await self.abort(request_id)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/async_llm.py", line 352, in abort
+    await self.engine_core.abort_requests_async(request_ids)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/core_client.py", line 702, in abort_requests_async
+    await self._send_input(EngineCoreRequestType.ABORT, request_ids)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/zmq/_future.py", line 542, in _add_send_event
+    r = send(msg, **nowait_kwargs)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/zmq/sugar/socket.py", line 749, in send_multipart
+    self.send(msg, zmq.SNDMORE | flags, copy=copy, track=track)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/zmq/sugar/socket.py", line 698, in send
+    return super().send(data, flags=flags, copy=copy, track=track)
+  File "zmq/backend/cython/_zmq.py", line 1152, in zmq.backend.cython._zmq.Socket.send
+  File "zmq/backend/cython/_zmq.py", line 1213, in zmq.backend.cython._zmq.Socket.send
+  File "zmq/backend/cython/_zmq.py", line 1473, in zmq.backend.cython._zmq._send_copy
+  File "zmq/backend/cython/_zmq.py", line 1468, in zmq.backend.cython._zmq._send_copy
+  File "zmq/backend/cython/_zmq.py", line 190, in zmq.backend.cython._zmq._check_rc
+zmq.error.ZMQError: Socket operation on non-socket
+Task exception was never retrieved
+future: <Task finished name='Task-46' coro=<<async_generator_asend without __name__>()> exception=ZMQError('Socket operation on non-socket')>
+Traceback (most recent call last):
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/async_llm.py", line 284, in generate
+    out = q.get_nowait() or await q.get()
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/output_processor.py", line 47, in get
+    await self.ready.wait()
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/asyncio/locks.py", line 214, in wait
+    await fut
+asyncio.exceptions.CancelledError
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/async_llm.py", line 295, in generate
+    await self.abort(request_id)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/async_llm.py", line 352, in abort
+    await self.engine_core.abort_requests_async(request_ids)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/core_client.py", line 702, in abort_requests_async
+    await self._send_input(EngineCoreRequestType.ABORT, request_ids)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/zmq/_future.py", line 542, in _add_send_event
+    r = send(msg, **nowait_kwargs)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/zmq/sugar/socket.py", line 749, in send_multipart
+    self.send(msg, zmq.SNDMORE | flags, copy=copy, track=track)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/zmq/sugar/socket.py", line 698, in send
+    return super().send(data, flags=flags, copy=copy, track=track)
+  File "zmq/backend/cython/_zmq.py", line 1152, in zmq.backend.cython._zmq.Socket.send
+  File "zmq/backend/cython/_zmq.py", line 1213, in zmq.backend.cython._zmq.Socket.send
+  File "zmq/backend/cython/_zmq.py", line 1473, in zmq.backend.cython._zmq._send_copy
+  File "zmq/backend/cython/_zmq.py", line 1468, in zmq.backend.cython._zmq._send_copy
+  File "zmq/backend/cython/_zmq.py", line 190, in zmq.backend.cython._zmq._check_rc
+zmq.error.ZMQError: Socket operation on non-socket
+Task exception was never retrieved
+future: <Task finished name='Task-47' coro=<<async_generator_asend without __name__>()> exception=ZMQError('Socket operation on non-socket')>
+Traceback (most recent call last):
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/async_llm.py", line 284, in generate
+    out = q.get_nowait() or await q.get()
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/output_processor.py", line 47, in get
+    await self.ready.wait()
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/asyncio/locks.py", line 214, in wait
+    await fut
+asyncio.exceptions.CancelledError
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/async_llm.py", line 295, in generate
+    await self.abort(request_id)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/async_llm.py", line 352, in abort
+    await self.engine_core.abort_requests_async(request_ids)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/core_client.py", line 702, in abort_requests_async
+    await self._send_input(EngineCoreRequestType.ABORT, request_ids)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/zmq/_future.py", line 542, in _add_send_event
+    r = send(msg, **nowait_kwargs)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/zmq/sugar/socket.py", line 749, in send_multipart
+    self.send(msg, zmq.SNDMORE | flags, copy=copy, track=track)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/zmq/sugar/socket.py", line 698, in send
+    return super().send(data, flags=flags, copy=copy, track=track)
+  File "zmq/backend/cython/_zmq.py", line 1152, in zmq.backend.cython._zmq.Socket.send
+  File "zmq/backend/cython/_zmq.py", line 1213, in zmq.backend.cython._zmq.Socket.send
+  File "zmq/backend/cython/_zmq.py", line 1473, in zmq.backend.cython._zmq._send_copy
+  File "zmq/backend/cython/_zmq.py", line 1468, in zmq.backend.cython._zmq._send_copy
+  File "zmq/backend/cython/_zmq.py", line 190, in zmq.backend.cython._zmq._check_rc
+zmq.error.ZMQError: Socket operation on non-socket
+Task exception was never retrieved
+future: <Task finished name='Task-23' coro=<<async_generator_asend without __name__>()> exception=ZMQError('Socket operation on non-socket')>
+Traceback (most recent call last):
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/async_llm.py", line 284, in generate
+    out = q.get_nowait() or await q.get()
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/output_processor.py", line 47, in get
+    await self.ready.wait()
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/asyncio/locks.py", line 214, in wait
+    await fut
+asyncio.exceptions.CancelledError
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/async_llm.py", line 295, in generate
+    await self.abort(request_id)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/async_llm.py", line 352, in abort
+    await self.engine_core.abort_requests_async(request_ids)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/core_client.py", line 702, in abort_requests_async
+    await self._send_input(EngineCoreRequestType.ABORT, request_ids)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/zmq/_future.py", line 542, in _add_send_event
+    r = send(msg, **nowait_kwargs)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/zmq/sugar/socket.py", line 749, in send_multipart
+    self.send(msg, zmq.SNDMORE | flags, copy=copy, track=track)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/zmq/sugar/socket.py", line 698, in send
+    return super().send(data, flags=flags, copy=copy, track=track)
+  File "zmq/backend/cython/_zmq.py", line 1152, in zmq.backend.cython._zmq.Socket.send
+  File "zmq/backend/cython/_zmq.py", line 1213, in zmq.backend.cython._zmq.Socket.send
+  File "zmq/backend/cython/_zmq.py", line 1473, in zmq.backend.cython._zmq._send_copy
+  File "zmq/backend/cython/_zmq.py", line 1468, in zmq.backend.cython._zmq._send_copy
+  File "zmq/backend/cython/_zmq.py", line 190, in zmq.backend.cython._zmq._check_rc
+zmq.error.ZMQError: Socket operation on non-socket
+Task exception was never retrieved
+future: <Task finished name='Task-24' coro=<<async_generator_asend without __name__>()> exception=ZMQError('Socket operation on non-socket')>
+Traceback (most recent call last):
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/async_llm.py", line 284, in generate
+    out = q.get_nowait() or await q.get()
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/output_processor.py", line 47, in get
+    await self.ready.wait()
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/asyncio/locks.py", line 214, in wait
+    await fut
+asyncio.exceptions.CancelledError
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/async_llm.py", line 295, in generate
+    await self.abort(request_id)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/async_llm.py", line 352, in abort
+    await self.engine_core.abort_requests_async(request_ids)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/core_client.py", line 702, in abort_requests_async
+    await self._send_input(EngineCoreRequestType.ABORT, request_ids)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/zmq/_future.py", line 542, in _add_send_event
+    r = send(msg, **nowait_kwargs)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/zmq/sugar/socket.py", line 749, in send_multipart
+    self.send(msg, zmq.SNDMORE | flags, copy=copy, track=track)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/zmq/sugar/socket.py", line 698, in send
+    return super().send(data, flags=flags, copy=copy, track=track)
+  File "zmq/backend/cython/_zmq.py", line 1152, in zmq.backend.cython._zmq.Socket.send
+  File "zmq/backend/cython/_zmq.py", line 1213, in zmq.backend.cython._zmq.Socket.send
+  File "zmq/backend/cython/_zmq.py", line 1473, in zmq.backend.cython._zmq._send_copy
+  File "zmq/backend/cython/_zmq.py", line 1468, in zmq.backend.cython._zmq._send_copy
+  File "zmq/backend/cython/_zmq.py", line 190, in zmq.backend.cython._zmq._check_rc
+zmq.error.ZMQError: Socket operation on non-socket
+Task exception was never retrieved
+future: <Task finished name='Task-32' coro=<<async_generator_asend without __name__>()> exception=ZMQError('Socket operation on non-socket')>
+Traceback (most recent call last):
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/async_llm.py", line 284, in generate
+    out = q.get_nowait() or await q.get()
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/output_processor.py", line 47, in get
+    await self.ready.wait()
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/asyncio/locks.py", line 214, in wait
+    await fut
+asyncio.exceptions.CancelledError
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/async_llm.py", line 295, in generate
+    await self.abort(request_id)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/async_llm.py", line 352, in abort
+    await self.engine_core.abort_requests_async(request_ids)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/core_client.py", line 702, in abort_requests_async
+    await self._send_input(EngineCoreRequestType.ABORT, request_ids)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/zmq/_future.py", line 542, in _add_send_event
+    r = send(msg, **nowait_kwargs)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/zmq/sugar/socket.py", line 749, in send_multipart
+    self.send(msg, zmq.SNDMORE | flags, copy=copy, track=track)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/zmq/sugar/socket.py", line 698, in send
+    return super().send(data, flags=flags, copy=copy, track=track)
+  File "zmq/backend/cython/_zmq.py", line 1152, in zmq.backend.cython._zmq.Socket.send
+  File "zmq/backend/cython/_zmq.py", line 1213, in zmq.backend.cython._zmq.Socket.send
+  File "zmq/backend/cython/_zmq.py", line 1473, in zmq.backend.cython._zmq._send_copy
+  File "zmq/backend/cython/_zmq.py", line 1468, in zmq.backend.cython._zmq._send_copy
+  File "zmq/backend/cython/_zmq.py", line 190, in zmq.backend.cython._zmq._check_rc
+zmq.error.ZMQError: Socket operation on non-socket
+Task exception was never retrieved
+future: <Task finished name='Task-33' coro=<<async_generator_asend without __name__>()> exception=ZMQError('Socket operation on non-socket')>
+Traceback (most recent call last):
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/async_llm.py", line 284, in generate
+    out = q.get_nowait() or await q.get()
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/output_processor.py", line 47, in get
+    await self.ready.wait()
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/asyncio/locks.py", line 214, in wait
+    await fut
+asyncio.exceptions.CancelledError
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/async_llm.py", line 295, in generate
+    await self.abort(request_id)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/async_llm.py", line 352, in abort
+    await self.engine_core.abort_requests_async(request_ids)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/core_client.py", line 702, in abort_requests_async
+    await self._send_input(EngineCoreRequestType.ABORT, request_ids)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/zmq/_future.py", line 542, in _add_send_event
+    r = send(msg, **nowait_kwargs)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/zmq/sugar/socket.py", line 749, in send_multipart
+    self.send(msg, zmq.SNDMORE | flags, copy=copy, track=track)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/zmq/sugar/socket.py", line 698, in send
+    return super().send(data, flags=flags, copy=copy, track=track)
+  File "zmq/backend/cython/_zmq.py", line 1152, in zmq.backend.cython._zmq.Socket.send
+  File "zmq/backend/cython/_zmq.py", line 1213, in zmq.backend.cython._zmq.Socket.send
+  File "zmq/backend/cython/_zmq.py", line 1473, in zmq.backend.cython._zmq._send_copy
+  File "zmq/backend/cython/_zmq.py", line 1468, in zmq.backend.cython._zmq._send_copy
+  File "zmq/backend/cython/_zmq.py", line 190, in zmq.backend.cython._zmq._check_rc
+zmq.error.ZMQError: Socket operation on non-socket
+INFO:     Application shutdown complete.
+Task exception was never retrieved
+future: <Task finished name='Task-48' coro=<<async_generator_asend without __name__>()> exception=ZMQError('Socket operation on non-socket')>
+Traceback (most recent call last):
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/async_llm.py", line 284, in generate
+    out = q.get_nowait() or await q.get()
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/output_processor.py", line 47, in get
+    await self.ready.wait()
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/asyncio/locks.py", line 214, in wait
+    await fut
+asyncio.exceptions.CancelledError
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/async_llm.py", line 295, in generate
+    await self.abort(request_id)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/async_llm.py", line 352, in abort
+    await self.engine_core.abort_requests_async(request_ids)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/core_client.py", line 702, in abort_requests_async
+    await self._send_input(EngineCoreRequestType.ABORT, request_ids)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/zmq/_future.py", line 542, in _add_send_event
+    r = send(msg, **nowait_kwargs)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/zmq/sugar/socket.py", line 749, in send_multipart
+    self.send(msg, zmq.SNDMORE | flags, copy=copy, track=track)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/zmq/sugar/socket.py", line 698, in send
+    return super().send(data, flags=flags, copy=copy, track=track)
+  File "zmq/backend/cython/_zmq.py", line 1152, in zmq.backend.cython._zmq.Socket.send
+  File "zmq/backend/cython/_zmq.py", line 1213, in zmq.backend.cython._zmq.Socket.send
+  File "zmq/backend/cython/_zmq.py", line 1473, in zmq.backend.cython._zmq._send_copy
+  File "zmq/backend/cython/_zmq.py", line 1468, in zmq.backend.cython._zmq._send_copy
+  File "zmq/backend/cython/_zmq.py", line 190, in zmq.backend.cython._zmq._check_rc
+zmq.error.ZMQError: Socket operation on non-socket
+Task exception was never retrieved
+future: <Task finished name='Task-67' coro=<<async_generator_asend without __name__>()> exception=ZMQError('Socket operation on non-socket')>
+Traceback (most recent call last):
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/async_llm.py", line 284, in generate
+    out = q.get_nowait() or await q.get()
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/output_processor.py", line 47, in get
+    await self.ready.wait()
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/asyncio/locks.py", line 214, in wait
+    await fut
+asyncio.exceptions.CancelledError
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/async_llm.py", line 295, in generate
+    await self.abort(request_id)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/async_llm.py", line 352, in abort
+    await self.engine_core.abort_requests_async(request_ids)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/vllm/v1/engine/core_client.py", line 702, in abort_requests_async
+    await self._send_input(EngineCoreRequestType.ABORT, request_ids)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/zmq/_future.py", line 542, in _add_send_event
+    r = send(msg, **nowait_kwargs)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/zmq/sugar/socket.py", line 749, in send_multipart
+    self.send(msg, zmq.SNDMORE | flags, copy=copy, track=track)
+  File "/mnt/lxy/miniconda3/envs/vllm084/lib/python3.10/site-packages/zmq/sugar/socket.py", line 698, in send
+    return super().send(data, flags=flags, copy=copy, track=track)
+  File "zmq/backend/cython/_zmq.py", line 1152, in zmq.backend.cython._zmq.Socket.send
+  File "zmq/backend/cython/_zmq.py", line 1213, in zmq.backend.cython._zmq.Socket.send
+  File "zmq/backend/cython/_zmq.py", line 1473, in zmq.backend.cython._zmq._send_copy
+  File "zmq/backend/cython/_zmq.py", line 1468, in zmq.backend.cython._zmq._send_copy
+  File "zmq/backend/cython/_zmq.py", line 190, in zmq.backend.cython._zmq._check_rc
+zmq.error.ZMQError: Socket operation on non-socket
