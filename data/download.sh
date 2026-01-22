@@ -2,44 +2,45 @@
 
 # Conda环境配置
 CONDA_SH_PATH="/mnt/zhaorunsong/anaconda3/etc/profile.d/conda.sh"  # Conda初始化脚本路径
-CONDA_ENV_NAME="tgpo"  # Conda环境名称
 BASE_DIR="/tmp/hx/tgpo"
+
+CONDA_ENV_NAME="tgpo"  # Conda环境名称
 
 DATA_DIR="$(cd "$(dirname "$0")" && pwd)"  # 当前脚本所在目录，用于调用 align_tokenizer.py
 
 source $CONDA_SH_PATH
 conda activate $CONDA_ENV_NAME
 
-SYMLINKS="False"
+# SYMLINKS="False"
 
-# ================= 1. 下载 Qwen2.5-Math-1.5B =================
-echo "正在下载 Qwen2.5-Math-1.5B-Instruct..."
-huggingface-cli download Qwen/Qwen2.5-Math-1.5B-Instruct \
-    --local-dir "$BASE_DIR/Qwen2.5-Math-1.5B-Instruct" \
-    --local-dir-use-symlinks $SYMLINKS \
-    --resume-download
+# # ================= 1. 下载 Qwen2.5-Math-1.5B =================
+# echo "正在下载 Qwen2.5-Math-1.5B-Instruct..."
+# huggingface-cli download Qwen/Qwen2.5-Math-1.5B-Instruct \
+#     --local-dir "$BASE_DIR/Qwen2.5-Math-1.5B-Instruct" \
+#     --local-dir-use-symlinks $SYMLINKS \
+#     --resume-download
 
-# ================= 2. 下载 Qwen2.5-Math-7B =================
-echo "正在下载 Qwen2.5-Math-7B-Instruct..."
-huggingface-cli download Qwen/Qwen2.5-Math-7B-Instruct \
-    --local-dir "$BASE_DIR/Qwen2.5-Math-7B-Instruct" \
-    --local-dir-use-symlinks $SYMLINKS \
-    --resume-download
+# # ================= 2. 下载 Qwen2.5-Math-7B =================
+# echo "正在下载 Qwen2.5-Math-7B-Instruct..."
+# huggingface-cli download Qwen/Qwen2.5-Math-7B-Instruct \
+#     --local-dir "$BASE_DIR/Qwen2.5-Math-7B-Instruct" \
+#     --local-dir-use-symlinks $SYMLINKS \
+#     --resume-download
 
-# ================= 3. 下载 Qwen3-30B-A3B-Thinking-2507 =================
-echo "正在下载 Qwen3-30B-A3B-Thinking-2507..."
-huggingface-cli download Qwen/Qwen3-30B-A3B-Thinking-2507 \
-    --local-dir "$BASE_DIR/Qwen3-30B-A3B-Thinking-2507" \
-    --local-dir-use-symlinks $SYMLINKS \
-    --resume-download
+# # ================= 3. 下载 Qwen3-30B-A3B-Thinking-2507 =================
+# echo "正在下载 Qwen3-30B-A3B-Thinking-2507..."
+# huggingface-cli download Qwen/Qwen3-30B-A3B-Thinking-2507 \
+#     --local-dir "$BASE_DIR/Qwen3-30B-A3B-Thinking-2507" \
+#     --local-dir-use-symlinks $SYMLINKS \
+#     --resume-download
 
-# ================= 4. 下载 Dataset (Openr1-Math-46k-8192) =================
-echo "正在下载数据集 Elliott/Openr1-Math-46k-8192..."
-huggingface-cli download Elliott/Openr1-Math-46k-8192 \
-    --repo-type dataset \
-    --local-dir "$BASE_DIR/datasets/Openr1-Math-46k-8192" \
-    --local-dir-use-symlinks $SYMLINKS \
-    --resume-download
+# # ================= 4. 下载 Dataset (Openr1-Math-46k-8192) =================
+# echo "正在下载数据集 Elliott/Openr1-Math-46k-8192..."
+# huggingface-cli download Elliott/Openr1-Math-46k-8192 \
+#     --repo-type dataset \
+#     --local-dir "$BASE_DIR/datasets/Openr1-Math-46k-8192" \
+#     --local-dir-use-symlinks $SYMLINKS \
+#     --resume-download
 
 # ================= 5. 对齐 tokenizer（以 Qwen3-30B 为 teacher）并为 1.5B/7B 的 assistant 后加 <think> =================
 echo "正在对齐 tokenizer: 1.5B、7B 以 30B 为 teacher, 并为 1.5B/7B 的 chat_template assistant 后加 <think> ..."
@@ -53,3 +54,16 @@ python "$DATA_DIR/align_tokenizer.py" \
     --add-think
 
 echo "✅ 所有下载与 tokenizer 对齐已完成！"
+
+
+
+# huggingface-cli download Qwen/Qwen3-0.6B \
+#     --local-dir "/mnt/lxy/hf_models/TGPO/Qwen3-0.6B" \
+#     --local-dir-use-symlinks False \
+#     --resume-download
+
+# huggingface-cli download Elliott/Openr1-Math-46k-8192 \
+#     --repo-type dataset \
+#     --local-dir "/mnt/lxy/hf_models/datasets/Openr1-Math-46k-8192" \
+#     --local-dir-use-symlinks False \
+#     --resume-download

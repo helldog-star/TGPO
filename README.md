@@ -18,6 +18,7 @@ pip install -e .
 cd verl
 pip install -e .
 cd ../..
+pip install transformers==4.55.4
 ```
 
 If you encounter issues when installing flash-attn, we recommend you to install it here 

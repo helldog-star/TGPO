@@ -2,13 +2,18 @@
 
 # Conda环境配置
 CONDA_SH_PATH="/mnt/zhaorunsong/anaconda3/etc/profile.d/conda.sh"  # Conda初始化脚本路径
-CONDA_ENV_NAME="tgpo"  # Conda环境名称
 BASE_DIR="/tmp/hx/tgpo"
+
+# CONDA_SH_PATH="/mnt/lxy/miniconda3/etc/profile.d/conda.sh"  # Conda初始化脚本路径
+# BASE_DIR="/mnt/lxy/hf_models"
+
+CONDA_ENV_NAME="tgpo"  # Conda环境名称
 
 source $CONDA_SH_PATH
 conda activate $CONDA_ENV_NAME
 
 MODEL_PATH="$BASE_DIR/Qwen3-30B-A3B-Thinking-2507-aligned"
+# MODEL_PATH="$BASE_DIR/Qwen3-0.6B"
 LOG_FILE="./prepare_train_vllm_server.log"
 
 # ---------- 传入 Python 的配置（可按需修改） ----------
@@ -72,16 +77,16 @@ python "$SCRIPT_DIR/my_prepare_train.py" \
 echo "🔍 验证采样结果..."
 python "$SCRIPT_DIR/my_verify.py" --input "$OUTPUT_PARQUET_PATH"
 
-# 7. 去掉 target 前的 <think>\n，输出 _correct_nothink.parquet
-CORRECT_PARQUET="${OUTPUT_PARQUET_PATH%.parquet}_correct.parquet"
-NOTHINK_PARQUET="${OUTPUT_PARQUET_PATH%.parquet}_correct_nothink.parquet"
-if [[ -f "$CORRECT_PARQUET" ]]; then
-    echo "📝 去掉 target 前的 <think>\\n ..."
-    python "$SCRIPT_DIR/my_post_process.py" --input "$CORRECT_PARQUET" --output "$NOTHINK_PARQUET"
-    echo "🎉 任务全部完成！最终训练数据: $NOTHINK_PARQUET"
-else
-    echo "⚠️ 未找到正确样本文件 $CORRECT_PARQUET，跳过 post_process。"
-    echo "🎉 任务完成。"
-fi
+# # 7. 去掉 target 前的 <think>\n，输出 _correct_nothink.parquet
+# CORRECT_PARQUET="${OUTPUT_PARQUET_PATH%.parquet}_correct.parquet"
+# NOTHINK_PARQUET="${OUTPUT_PARQUET_PATH%.parquet}_correct_nothink.parquet"
+# if [[ -f "$CORRECT_PARQUET" ]]; then
+#     echo "📝 去掉 target 前的 <think>\\n ..."
+#     python "$SCRIPT_DIR/my_post_process.py" --input "$CORRECT_PARQUET" --output "$NOTHINK_PARQUET"
+#     echo "🎉 任务全部完成！最终训练数据: $NOTHINK_PARQUET"
+# else
+#     echo "⚠️ 未找到正确样本文件 $CORRECT_PARQUET，跳过 post_process。"
+#     echo "🎉 任务完成。"
+# fi
 
 # 脚本退出时会自动触发 trap 里的 kill 命令
