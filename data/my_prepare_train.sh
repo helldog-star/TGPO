@@ -1,21 +1,19 @@
 #!/bin/bash
 
 # Conda环境配置
-CONDA_SH_PATH="/opt/conda/etc/profile.d/conda.sh"  # Conda初始化脚本路径
-BASE_DIR="/tmp/hx/tgpo"
+CONDA_SH_PATH="/mnt/nvme3/liuxinyu/miniconda3/etc/profile.d/conda.sh"  # Conda初始化脚本路径
+BASE_DIR="/mnt/nvme3/liuxinyu/models"
 
 # CONDA_SH_PATH="/mnt/lxy/miniconda3/etc/profile.d/conda.sh"  # Conda初始化脚本路径
 # BASE_DIR="/mnt/lxy/hf_models"
 
-CONDA_ENV_NAME="vllm"  # Conda环境名称 # 这里需要单独新建一个conda环境，pip install vllm==0.8.4
+CONDA_ENV_NAME="vllm084"  # Conda环境名称 # 这里需要单独新建一个conda环境，pip install vllm==0.8.4
 
 source $CONDA_SH_PATH
 conda activate $CONDA_ENV_NAME
 
-pip install datasets
-pip install pandas
 
-MODEL_PATH="$BASE_DIR/Qwen3-30B-A3B-Thinking-2507-aligned"
+MODEL_PATH="$BASE_DIR/Qwen3-30B-A3B-Thinking-2507"
 # MODEL_PATH="$BASE_DIR/Qwen3-0.6B"
 LOG_FILE="./prepare_train_vllm_server.log"
 
@@ -30,8 +28,8 @@ VLLM_BASE_URL="${VLLM_BASE_URL:-http://localhost:8000/v1}"
 MAX_WORKERS="${MAX_WORKERS:-32}"
 BATCH_SIZE="${BATCH_SIZE:-16}"
 
-# echo "🚀 数据预处理..."
-# python prepare_train.py --dataset $DATASET_PATH --output $OUTPUT_PARQUET_PATH_ORI
+echo "🚀 数据预处理..."
+python prepare_train.py --dataset $DATASET_PATH --output $OUTPUT_PARQUET_PATH_ORI
 
 echo "🚀 正在启动 vLLM 服务..."
 

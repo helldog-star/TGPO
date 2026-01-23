@@ -3,7 +3,7 @@
 # 支持通过环境变量覆盖（如 CONDA_SH_PATH, CONDA_ENV_NAME）
 
 # ---------- 1. Conda 配置（可通过环境变量覆盖） ----------
-CONDA_SH_PATH="${CONDA_SH_PATH:-/opt/conda/etc/profile.d/conda.sh}"  # Conda初始化脚本路径
+CONDA_SH_PATH="${CONDA_SH_PATH:-/mnt/nvme3/liuxinyu/miniconda3/etc/profile.d/conda.sh}"  # Conda初始化脚本路径
 CONDA_ENV_NAME="${CONDA_ENV_NAME:-tgpo}"  # Conda环境名称
 
 # ---------- 2. 激活 conda 环境 ----------
@@ -30,7 +30,18 @@ setup_common_env() {
     export no_proxy="${no_proxy:-127.0.0.1,localhost}"
     export NO_PROXY="${NO_PROXY:-127.0.0.1,localhost}"
     export VLLM_ATTENTION_BACKEND="${VLLM_ATTENTION_BACKEND:-XFORMERS}"
+    export VLLM_WORKER_MULTIPROC_METHOD=spawn
 }
+
+# ---------- 3.1 训练模型路径（可通过环境变量覆盖） ----------
+# 用作 actor_rollout_ref.model.path 的默认值
+MODEL_PATH="${MODEL_PATH:-/mnt/nvme3/liuxinyu/models/Qwen2.5-Math-1.5B-Instruct-aligned}"
+
+# ---------- 3.2 Teacher / Eval 路径（可通过环境变量覆盖） ----------
+# on-policy distill 方法用的 teacher 模型路径；不需要 teacher 的 algo 可传 none
+TEACHER_MODEL_PATH="${TEACHER_MODEL_PATH:-/mnt/nvme3/liuxinyu/models/Qwen3-30B-A3B-Thinking-2507-aligned}"
+# 评估脚本目录（依赖 PROJECT_ROOT，由调用脚本提供）
+EVAL_SCRIPTS_DIR="${EVAL_SCRIPTS_DIR:-$PROJECT_ROOT/eval_scripts}"
 
 # ---------- 4. 完整环境设置（一步到位） ----------
 # 函数：setup_all_env

@@ -73,7 +73,53 @@ def simplerl_template(question: str):
         + '\nPlease reason step by step, and put your final answer within\\boxed{{}}.<|im_end|>\n<|im_start|>assistant\n'
     )
 
-def main(input_file, output_file, model_path, debug=False, remove_system=True, template='own', temperature=0.6, top_p=1.0, max_tokens=8192, n=1, force_generate=True, add_think_before_answer=False, add_oat_evaluate=False, any_true=False, skip_scoring=False, output_eval=None, no_split_think=False):
+def build_prompt_from_message(message, tokenizer, template: str):
+    if template == 'own':
+        return tokenizer.apply_chat_template(
+            message,
+            tokenize=False,
+            add_generation_prompt=True
+        )
+    if template == 'simplerl':
+        return simplerl_template(message[0]['content'])
+    if template == 'qwen':
+        return apply_qwen_math_template(message[0]['content'])
+    if template == 'prime':
+        return make_conv_zero(message[0]['content'])
+    if template == 'prime_sft':
+        return make_conv_prime_sft(message[0]['content'], tokenizer)
+    if template == 'prime_code':
+        return make_conv_zero_code(message[0]['content'])
+    if template == 'no':
+        return message[0]['content']
+    raise ValueError(f'Invalid template: {template}')
+
+# def filter_overlong_samples(messages, answers, model_path, template, max_tokens, max_model_len, safety_margin=8):
+#     tokenizer = AutoTokenizer.from_pretrained(model_path)
+#     kept_messages = []
+#     kept_answers = []
+#     dropped = 0
+#     total = len(messages)
+#     for idx, (message, answer) in enumerate(zip(messages, answers)):
+#         prompt = build_prompt_from_message(message, tokenizer, template)
+#         prompt_len = len(tokenizer(prompt, add_special_tokens=False).input_ids)
+#         limit = max_model_len - safety_margin
+#         if prompt_len + max_tokens > limit:
+#             dropped += 1
+#             print(
+#                 f"drop idx={idx} prompt_len={prompt_len} "
+#                 f"max_tokens={max_tokens} max_model_len={max_model_len} "
+#                 f"safety_margin={safety_margin}"
+#             )
+#             continue
+#         kept_messages.append(message)
+#         kept_answers.append(answer)
+#     if dropped > 0:
+#         ratio = (dropped / total) if total > 0 else 0.0
+#         print(f"dropped {dropped}/{total} samples ({ratio:.2%}) due to length")
+#     return kept_messages, kept_answers
+
+def main(input_file, output_file, model_path, debug=False, remove_system=True, template='own', temperature=0.6, top_p=1.0, max_tokens=8192, n=1, force_generate=True, add_think_before_answer=False, add_oat_evaluate=False, any_true=False, skip_scoring=False, output_eval=None, no_split_think=False, max_model_len=16384, safety_margin=8):
 
     df = pd.read_parquet(input_file)
     dec_output_path = output_file.replace('.jsonl', '') + '.decoded.jsonl'
@@ -97,10 +143,25 @@ def main(input_file, output_file, model_path, debug=False, remove_system=True, t
         # if debug:
         #     print(f"answers: {answers}")
         assert len(messages) == len(answers)
-                
+        
+        # messages, answers = filter_overlong_samples(
+        #     messages, answers, model_path, template, max_tokens, max_model_len
+        # )
+        # if len(messages) == 0:
+        #     raise ValueError("all samples are overlong after filtering")
+
         print(messages[0])
         print(f"temperature: {temperature}, top_p: {top_p}, max_tokens: {max_tokens}, n: {n}")
-        outputs = generate_vllm(messages, model_path, template=template, temperature=temperature, top_p=top_p, max_tokens=max_tokens, n=n)
+        outputs = generate_vllm(
+            messages,
+            model_path,
+            template=template,
+            temperature=temperature,
+            top_p=top_p,
+            max_tokens=max_tokens,
+            n=n,
+            max_model_len=max_model_len
+        )
         # rets = {}
         
         # save the outputs first
@@ -214,36 +275,18 @@ def main(input_file, output_file, model_path, debug=False, remove_system=True, t
         print(f'Error: {e}')
         print(f'Output file: {output_file}')
 
-def generate_vllm(messages, model_path, template='own', temperature=0.6, top_p=0.95, max_tokens=8192, n=1):
+def generate_vllm(messages, model_path, template='own', temperature=0.6, top_p=0.95, max_tokens=8192, n=1, max_model_len=16384):
     #vllm模型加载
     tokenizer = AutoTokenizer.from_pretrained(model_path)
     # max_tokens is for the maximum length for generation.
-    sampling_params = SamplingParams(temperature=temperature, top_p=top_p, max_tokens=8192, n=n)
+    sampling_params = SamplingParams(temperature=temperature, top_p=top_p, max_tokens=max_tokens, n=n)
     print(torch.cuda.device_count())
-    llm = LLM(model=model_path, tensor_parallel_size=torch.cuda.device_count(), gpu_memory_utilization=0.85)  # 替换成本地路径
+    llm = LLM(model=model_path, tensor_parallel_size=torch.cuda.device_count(), gpu_memory_utilization=0.85, max_model_len=max_model_len, max_seq_len_to_capture=max_model_len, trust_remote_code=True)  # 替换成本地路径
 
     gen_prompts = []
     for i in range(len(messages)):
         cur_message = messages[i]
-        if template == 'own': 
-            gen_prompt = tokenizer.apply_chat_template(
-                cur_message,
-                tokenize=False,
-                add_generation_prompt=True
-            )
-        elif template == 'simplerl':
-            gen_prompt = simplerl_template(cur_message[0]['content'])
-        elif template == 'qwen':
-            gen_prompt = apply_qwen_math_template(cur_message[0]['content'])
-        elif template == 'prime':
-            gen_prompt = make_conv_zero(cur_message[0]['content'])
-        elif template == 'prime_sft':
-            gen_prompt = make_conv_prime_sft(cur_message[0]['content'], tokenizer)
-        elif template == 'prime_code':
-            gen_prompt = make_conv_zero_code(cur_message[0]['content'])
-        elif template == 'no':
-            gen_prompt = cur_message[0]['content']
-        else: raise ValueError(f'Invalid template: {template}')
+        gen_prompt = build_prompt_from_message(cur_message, tokenizer, template)
         gen_prompts.append(gen_prompt)
         if i == 0:
             print('Example input: ', gen_prompt)

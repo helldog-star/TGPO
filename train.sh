@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # 统一训练脚本：通过 --algo 切换，ALGO 列表与差异化参数见 config/tasks.sh
-# 用法: ./train.sh --algo ALGO [--exp-name NAME] [--root ROOT] [--model-path P] [--teacher-model-path P] [--data-dir D] [--train-files F] [--val-files F] [其他 hydra 覆盖...]
+# 用法: ./train.sh --algo ALGO [--exp-name NAME] [--save-dir DIR] [--model-path P] [--teacher-model-path P] [--data-dir D] [--train-files F] [--val-files F] [其他 hydra 覆盖...]
 #
 # 示例:
 #   ./train.sh --algo grpo
@@ -17,13 +17,14 @@ export HF_ENDPOINT=https://hf-mirror.com
 
 # -------------------- 加载 config 文件 --------------------
 _SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_ROOT="$_SCRIPT_DIR"
 . "${_SCRIPT_DIR}/config/tasks.sh"
 . "${_SCRIPT_DIR}/config/env.sh"
 
 # -------------------- 解析本脚本参数 --------------------
 ALGO=""
 EXP_NAME=""
-ROOT=""
+SAVE_DIR=""
 MODEL_PATH=""
 TEACHER_MODEL_PATH=""
 DATA_DIR=""
@@ -34,7 +35,8 @@ while [[ $# -gt 0 ]]; do
     case $1 in
         --algo)                ALGO="$2"; shift 2 ;;
         --exp-name)            EXP_NAME="$2"; shift 2 ;;
-        --root)                ROOT="$2"; shift 2 ;;
+        --save-dir)            SAVE_DIR="$2"; shift 2 ;;
+        --root)                SAVE_DIR="$2"; shift 2 ;; # 兼容旧参数
         --model-path)          MODEL_PATH="$2"; shift 2 ;;
         --teacher-model-path)  TEACHER_MODEL_PATH="$2"; shift 2 ;;
         --data-dir)            DATA_DIR="$2"; shift 2 ;;
@@ -45,14 +47,15 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [[ -z "$ALGO" ]]; then
-    echo "用法: $0 --algo ALGO [--exp-name NAME] [--root ROOT] [--model-path P] [--teacher-model-path P] [--data-dir D] [--train-files F] [--val-files F] [hydra 覆盖...]"
+    echo "用法: $0 --algo ALGO [--exp-name NAME] [--save-dir DIR] [--model-path P] [--teacher-model-path P] [--data-dir D] [--train-files F] [--val-files F] [hydra 覆盖...]"
     echo "  ALGO: $ALGOS （见 config/tasks.sh）"
     exit 1
 fi
 
 # -------------------- 默认推导 --------------------
-export PYTHONPATH=$ROOT:$PYTHONPATH
-DATA_DIR="${DATA_DIR:-$ROOT/data}"
+SAVE_DIR="${SAVE_DIR:-$PROJECT_ROOT}"
+export PYTHONPATH=$PROJECT_ROOT:$PYTHONPATH
+DATA_DIR="${DATA_DIR:-$PROJECT_ROOT/data}"
 TRAIN_FILES="${TRAIN_FILES:-$DATA_DIR/openr1.a3b_correct_35k.parquet}"
 VAL_FILES="${VAL_FILES:-$DATA_DIR/valid.parquet}"
 EXP_NAME="${EXP_NAME:-$(get_exp_name "$ALGO")}"
@@ -69,15 +72,18 @@ fi
 setup_all_env
 ray stop
 
-export WANDB_PROJECT="tipo"
+export WANDB_PROJECT="tgpo"
 export WANDB_MODE="offline"
 export WANDB_API_KEY="b6d66b4632451b4d1908d9286fdafc46553519a7"
-export WANDB_DIR=$ROOT/checkpoints/$EXP_NAME/wandb
-export PROJ_DIR=$ROOT/checkpoints/$EXP_NAME
+export WANDB_DIR=$SAVE_DIR/checkpoints/$EXP_NAME/wandb
+export PROJ_DIR=$SAVE_DIR/checkpoints/$EXP_NAME
+
+mkdir -p $WANDB_DIR
+
 mkdir -p $PROJ_DIR/logs
 LOG_FILE=$PROJ_DIR/logs/training_$(date +%Y%m%d_%H%M%S).log
 
-cd $ROOT/luffy/verl/
+cd $PROJECT_ROOT/luffy/verl/
 
 # -------------------- 按 algo 设置差异化 hydra 覆盖（来自 config/tasks.sh get_algo_extra） --------------------
 EXTRA=$(get_algo_extra "$ALGO")
@@ -126,8 +132,8 @@ python3 -m verl.mix_src.main_mix_ppo \
     +trainer.val_before_train=False \
     trainer.n_gpus_per_node=8 \
     trainer.nnodes=1 \
-    trainer.save_freq=50 \
-    trainer.test_freq=20 \
+    trainer.save_freq=100 \
+    trainer.test_freq=50 \
     trainer.default_local_dir=$PROJ_DIR \
     actor_rollout_ref.actor.use_kl_loss=False \
     actor_rollout_ref.actor.use_sft_prefix_reward=False \
@@ -136,11 +142,10 @@ python3 -m verl.mix_src.main_mix_ppo \
     actor_rollout_ref.rollout.n_prefix=1 \
     actor_rollout_ref.rollout.prefix_reward_weight_alpha=1.0 \
     actor_rollout_ref.ref.use_ref=False \
-    algorithm.grpo_use_std=True \
     data.reward_impl_version=3 \
     trainer.max_optim_to_keep=2 \
     data.shuffle=True \
     trainer.default_hdfs_dir=null \
-    trainer.total_training_steps=300 \
+    trainer.total_training_steps=1 \
     $EXTRA \
     "$@" > >(tee $LOG_FILE) 2> >(tee ${LOG_FILE}.err >&2)

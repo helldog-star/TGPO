@@ -305,30 +305,6 @@ def compute_advantage(data: DataProto, adv_estimator, gamma=1.0, lam=1.0, grpo_u
         )
         data.batch["advantages"] = advantages
         data.batch["returns"] = returns
-    elif adv_estimator == "tipo_neg":
-        token_level_rewards = data.batch['token_level_rewards']
-        index = data.non_tensor_batch['uid']
-        responses = data.batch['responses']
-        response_length = responses.size(-1)
-        attention_mask = data.batch['attention_mask']
-        response_mask = attention_mask[:, -response_length:]
-        teacher_predict_ids = data.batch["teacher_predict_ids"]
-        teacher_log_prob = data.batch["teacher_log_prob"]
-        teacher_ids_log_probs=data.batch["teacher_ids_log_probs"]
-        entropys = data.batch["entropys"]
-        from .mix_core_alg import compute_tipo_neg_advantage
-        advantages, returns = compute_tipo_neg_advantage(
-            token_level_rewards=token_level_rewards,
-            entropys=entropys,
-            eos_mask=response_mask,
-            index=index,
-            use_std=grpo_use_std,
-            teacher_predict_ids=teacher_predict_ids,
-            student_predict_ids=responses,
-            teacher_ids_log_probs=teacher_ids_log_probs
-        )
-        data.batch["advantages"] = advantages
-        data.batch["returns"] = returns
     elif adv_estimator == "tipo_top20ptok":
         token_level_rewards = data.batch['token_level_rewards']
         index = data.non_tensor_batch['uid']
@@ -496,8 +472,6 @@ class MIXRayPPOTrainer(RayPPOTrainer):
             self.use_critic = False
         elif self.config.algorithm.adv_estimator == 'opsft':
             self.use_critic = False
-        elif self.config.algorithm.adv_estimator == 'tipo_neg':
-            self.use_critic = False
         elif self.config.algorithm.adv_estimator == 'tipo_top20ptok':
             self.use_critic = False
         else:
@@ -651,9 +625,6 @@ class MIXRayPPOTrainer(RayPPOTrainer):
             if self.config.trainer.get('val_only', False):
                 return
 
-        # we start from step 1
-        self.global_steps += 1
-
         n_samples = self.config.actor_rollout_ref.rollout.n
         if self.config.data.get('add_tgt_with_acc', False):
             n_samples = n_samples - 1 # if filter tgt with acc, we either use tgt or on policy samples.
@@ -661,6 +632,8 @@ class MIXRayPPOTrainer(RayPPOTrainer):
         for _ in range(self.config.trainer.total_epochs):
             
             for batch_dict in self.train_dataloader:
+                # step counter: increment at the beginning of each training step
+                self.global_steps += 1
                 batch: DataProto = DataProto.from_single_dict(batch_dict)
 
                 metrics = {}
@@ -906,15 +879,19 @@ class MIXRayPPOTrainer(RayPPOTrainer):
                 # TODO: make a canonical logger that supports various backend
                 logger.log(data=metrics, step=self.global_steps)
 
-                self.global_steps += 1
-
-                if self.global_steps > self.total_training_steps:
+                if self.global_steps >= self.total_training_steps:
+                    # save the final checkpoint even if save_freq is not hit
+                    if self.config.trainer.save_freq > 0 and \
+                            self.global_steps % self.config.trainer.save_freq != 0:
+                        with _timer('save_checkpoint', timing_raw):
+                            self._save_checkpoint()
 
                     # perform validation after training
                     if self.val_reward_fn is not None:
                         val_metrics = self._validate()
                         pprint(f'Final validation metrics: {val_metrics}')
                         logger.log(data=val_metrics, step=self.global_steps)
+                        self.maybe_save_best_hf(val_metrics)
                     return
 
     def maybe_save_best_hf(self, val_metrics: dict):
@@ -931,6 +908,10 @@ class MIXRayPPOTrainer(RayPPOTrainer):
             print('Find no current best saved. Best score is set to -inf')
             best_score = -float('inf')
         
+        if 'avg_score' not in val_metrics:
+            # skip saving best if required metric is missing
+            print('Skip saving best checkpoint: avg_score not found in val_metrics')
+            return
         cur_score = val_metrics['avg_score']
         
         if cur_score > best_score:

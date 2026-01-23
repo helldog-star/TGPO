@@ -179,7 +179,35 @@ class BaseModelMerger(ABC):
             )
             self.hf_model_config_path = config.hf_model_path
 
-        self.model_config = AutoConfig.from_pretrained(self.hf_model_config_path)
+        self.model_config = self._load_model_config_with_fallback()
+
+    @staticmethod
+    def _has_architectures(model_config: PretrainedConfig) -> bool:
+        architectures = getattr(model_config, "architectures", None)
+        return bool(architectures)
+
+    def _load_model_config_with_fallback(self) -> PretrainedConfig:
+        primary_path = self.hf_model_config_path
+        model_config = AutoConfig.from_pretrained(primary_path)
+        if self._has_architectures(model_config):
+            return model_config
+
+        hf_dir = Path(self.config.local_dir) / "huggingface"
+        if hf_dir.exists():
+            candidate_config = AutoConfig.from_pretrained(str(hf_dir))
+            if self._has_architectures(candidate_config):
+                self.hf_model_config_path = str(hf_dir)
+                warnings.warn(
+                    f"Using fallback config from {hf_dir} because architectures missing in {primary_path}",
+                    stacklevel=1,
+                )
+                return candidate_config
+
+        warnings.warn(
+            f"architectures missing in config at {primary_path}, and no valid fallback in {hf_dir}.",
+            stacklevel=1,
+        )
+        return model_config
 
     def get_transformers_auto_model_class(self):
         if "ForTokenClassification" in self.model_config.architectures[0]:

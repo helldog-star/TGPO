@@ -300,8 +300,26 @@ def compute_token_on_tipo_loss(
     
     pg_clipfrac = verl_F.masked_mean(torch.gt(pg_losses2, pg_losses).float(), eos_mask)
     
+    # method 1
     # 最大化student对teacher预测token的log概率，等价于最小化负log概率（负对数似然）
     teacher_reg_loss = -verl_F.masked_mean(teacher_ids_log_probs, eos_mask)
+    total_loss = pg_loss + teacher_coef * teacher_reg_loss
+
+    # # method 2
+    # term_teacher_loss = -teacher_ids_log_probs
+    
+    # # Adaptive Regularization
+    # # 如果当前 token 的 advantage 很高 (student 做得比 baseline 好)，
+    # # 即使偏离 teacher 也不应该受到太大的惩罚。
+    # if adaptive_teacher_reg:
+    #     # 创建一个调节系数，优势越大，正则越小
+    #     # 只对 Advantage <= 0 的部分施加完全 Teacher 约束
+    #     reg_weight = torch.sigmoid(-advantages) # 当 adv 大时 weight -> 0
+    #     term_teacher_loss = term_teacher_loss * reg_weight.detach()
+
+    # teacher_reg_loss = masked_mean(term_teacher_loss, eos_mask)
+    
+    # 总损失
     total_loss = pg_loss + teacher_coef * teacher_reg_loss
     
     return total_loss, pg_loss, teacher_reg_loss, pg_clipfrac, ppo_kl
@@ -320,7 +338,7 @@ def compute_token_on_kdrl_loss(
     loss_remove_token_mean: bool = False
 ):
     """
-    KDRL Loss: J_KDRL(θ) = J_GRPO(θ) - β * D_KL^k2(π_θ || π_T)
+    KDRL Loss: J_KDRL(θ) = J_GRPO(θ) - β * D_KL(π_θ || π_T)
     """
     
     negative_approx_kl = log_prob - old_log_prob
@@ -341,18 +359,14 @@ def compute_token_on_kdrl_loss(
     
     pg_clipfrac = verl_F.masked_mean(torch.gt(pg_losses2, pg_losses).float(), eos_mask)
     
-    # 计算 R_i,t(θ) = log[π_T / π_θ]
-    R_theta = teacher_log_prob - log_prob  # shape: [batch, seq_len]
-    
-    # 计算 D_KL^k2(π_θ || π_T)
-    R_theta_squared = R_theta ** 2  # R_i,t(θ)^2
-    kd_token_loss = 0.5 * R_theta_squared # 1/2 * R_i,t(θ)^2
+    # 计算 D_KL(π_θ || π_T) = E_{π_θ}[log π_θ - log π_T]
+    kl_token = log_prob - teacher_log_prob  # shape: [batch, seq_len]
     if loss_remove_token_mean is True:
-        teacher_reg_loss = (kd_token_loss * eos_mask).sum() / eos_mask.shape[-1]
+        teacher_reg_loss = (kl_token * eos_mask).sum() / eos_mask.shape[-1]
     else:
-        teacher_reg_loss = verl_F.masked_mean(kd_token_loss, eos_mask)
+        teacher_reg_loss = verl_F.masked_mean(kl_token, eos_mask)
     
-    # J_KDRL(θ) = J_GRPO(θ) - β * D_KL^k2(π_θ || π_T)
+    # J_KDRL(θ) = J_GRPO(θ) - β * D_KL(π_θ || π_T)
     total_loss = pg_loss - teacher_coef * teacher_reg_loss
     
     return total_loss, pg_loss, teacher_reg_loss, pg_clipfrac, ppo_kl
@@ -387,7 +401,7 @@ def compute_rkl_advantage(
 
     return scores, scores
 
-# 所有tok grpo adv + teacher rkl [👎]
+# 所有tok grpo adv + teacher rkl
 def compute_grpo_merge_rkl_advantage(token_level_rewards: torch.Tensor,
                                     eos_mask: torch.Tensor,
                                     index: torch.Tensor,
@@ -524,7 +538,7 @@ def compute_tipo_advantage(token_level_rewards: torch.Tensor,
 
     return scores, scores
 
-# 所有tok均仅采用student forcing teacher ce [👎]
+# 所有tok均仅采用student forcing teacher ce
 def compute_opsft_advantage(entropys: torch.Tensor,
                         eos_mask: torch.Tensor,
                         teacher_predict_ids: torch.Tensor,
@@ -548,9 +562,6 @@ def compute_opsft_advantage(entropys: torch.Tensor,
     """
 
     with torch.no_grad():
-        
-        # 计算 CE Loss (Loss通常为正数: -log_probs)
-        ce_loss = -teacher_ids_log_probs 
 
         # ===== 统计信息打印 (Statistics Logging) =====
         valid_all_entropys = entropys[eos_mask.bool()]
@@ -575,8 +586,22 @@ def compute_opsft_advantage(entropys: torch.Tensor,
         print(f"[TIPO-Entro] Ent_Mean: {avg_all_entropy:.4f} | Diff_Ratio: {mismatch_ratio:.1%} | Diff_Ent(Min/Avg/Max): {diff_ent_min:.3f}/{diff_ent_mean:.3f}/{diff_ent_max:.3f}")
 
         # ===== 仅采用teacher监督 =====
-        teacher_signal = -ce_loss
-        scores = teacher_signal
+        raw_scores = teacher_ids_log_probs
+        # 1. 仅在有效 mask 范围内计算 mean 和 std
+        # 这样避免 padding token 影响统计量
+        valid_scores = raw_scores[eos_mask.bool()]
+        
+        if valid_scores.numel() > 1:
+            mean = valid_scores.mean()
+            std = valid_scores.std() + epsilon
+            
+            # 2. 执行归一化 (Whitening)
+            # 结果将以 0 为中心，方差为 1
+            # > 0 表示 Teacher 在此处比平均情况更自信 (应鼓励 Student)
+            # < 0 表示 Teacher 在此处不自信 (应抑制 Student 或降低权重)
+            scores = (raw_scores - mean) / std
+        else:
+            scores = raw_scores - raw_scores.mean() # Fallback
 
     return scores, scores
 
@@ -834,7 +859,6 @@ def compute_tipo_high_advantage(token_level_rewards: torch.Tensor,
 
     return scores, scores
 
-
 # 高熵tok grpo adv + 高熵tok stuforce teacher ce
 def compute_tipo_high_both_advantage(token_level_rewards: torch.Tensor,
                                 entropys: torch.Tensor,
@@ -959,82 +983,6 @@ def compute_tipo_high_both_advantage(token_level_rewards: torch.Tensor,
               f"Mag(Out/Tea): {outcome_magnitude:.3f}/{teacher_magnitude.item():.3f}")
 
         scores = scores * high_entropy_mask + weighted_teacher_signal
-
-    return scores, scores
-
-# reward!=0样本采用grpo adv，reward=0样本采用stuforce teacher cep [👎]
-def compute_tipo_neg_advantage(token_level_rewards: torch.Tensor,
-                            entropys: torch.Tensor,
-                            eos_mask: torch.Tensor,
-                            index: torch.Tensor,
-                            teacher_predict_ids: torch.Tensor,
-                            student_predict_ids: torch.Tensor,
-                            teacher_ids_log_probs: torch.Tensor,
-                            epsilon: float = 1e-6,
-                            use_std: bool = True):
-    """
-    Compute advantage for GRPO, with special handling for zero-reward samples.
-    """
-    response_length = token_level_rewards.shape[-1]
-    non_zero_mask = (token_level_rewards != 0)
-    scores = (token_level_rewards * non_zero_mask).sum(dim=-1)
-    zero_reward_mask = (scores == 0)  # shape: (bs,)
-
-    id2score = defaultdict(list)
-    id2mean = {}
-    id2std = {}
-
-    with torch.no_grad():
-        bsz = scores.shape[0]
-        for i in range(bsz):
-            id2score[index[i]].append(scores[i])
-        for idx in id2score:
-            if len(id2score[idx]) == 1:
-                id2mean[idx] = torch.tensor(0.0)
-                id2std[idx] = torch.tensor(1.0)
-            elif len(id2score[idx]) > 1:
-                id2mean[idx] = torch.mean(torch.tensor(id2score[idx]))
-                id2std[idx] = torch.std(torch.tensor([id2score[idx]]))
-            else:
-                raise ValueError(f"no score in prompt index: {idx}")
-        for i in range(bsz):
-            if use_std:
-                scores[i] = (scores[i] - id2mean[index[i]]) / (id2std[index[i]] + epsilon)
-            else:
-                scores[i] = (scores[i] - id2mean[index[i]])
-        scores = scores.unsqueeze(-1).tile([1, response_length]) * eos_mask
-        
-        # ===== 统计信息打印 (Statistics Logging) =====
-        valid_all_entropys = entropys[eos_mask.bool()]
-        avg_all_entropy = valid_all_entropys.mean().item() if valid_all_entropys.numel() > 0 else 0.0
-
-        total_valid_tokens = eos_mask.sum() + epsilon
-        
-        # Teacher/Student 不一致比例 (Mismatch Ratio)
-        is_diff = (teacher_predict_ids != student_predict_ids).float() * eos_mask
-        mismatch_ratio = is_diff.sum() / total_valid_tokens
-        
-        # 不一致位置的熵统计 (Diff Ent)
-        diff_entropys = entropys[is_diff.bool()]
-        if diff_entropys.numel() > 0:
-            diff_ent_min = diff_entropys.min().item()
-            diff_ent_mean = diff_entropys.mean().item()
-            diff_ent_max = diff_entropys.max().item()
-        else:
-            diff_ent_min = diff_ent_mean = diff_ent_max = 0.0
-
-        # 打印请求的信息
-        print(f"[TIPO-Entro] Ent_Mean: {avg_all_entropy:.4f} | Diff_Ratio: {mismatch_ratio:.1%} | Diff_Ent(Min/Avg/Max): {diff_ent_min:.3f}/{diff_ent_mean:.3f}/{diff_ent_max:.3f}")
-
-        # ===== 融合优势与teacher监督 =====
-        teacher_signal = -teacher_ids_log_probs
-        
-        zero_reward_sample_mask = zero_reward_mask.unsqueeze(-1).tile([1, response_length]) * eos_mask
-        scores = torch.where(
-            zero_reward_sample_mask.bool(),
-            teacher_signal,
-            scores
-        )
 
     return scores, scores
 
