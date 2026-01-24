@@ -865,7 +865,7 @@ class MIXRayPPOTrainer(RayPPOTrainer):
                         if 'avg_score' not in val_metrics:
                             val_metrics['avg_score'] = np.mean([val_metrics[key] for key in val_metrics if key.startswith('val/test_score/')])
                         metrics.update(val_metrics)
-                        self.maybe_save_best_hf(val_metrics)
+                        # self.maybe_save_best_hf(val_metrics)
 
                     if self.config.trainer.save_freq > 0 and \
                             self.global_steps % self.config.trainer.save_freq == 0:
@@ -891,7 +891,7 @@ class MIXRayPPOTrainer(RayPPOTrainer):
                         val_metrics = self._validate()
                         pprint(f'Final validation metrics: {val_metrics}')
                         logger.log(data=val_metrics, step=self.global_steps)
-                        self.maybe_save_best_hf(val_metrics)
+                        # self.maybe_save_best_hf(val_metrics)
                     return
 
     def maybe_save_best_hf(self, val_metrics: dict):

@@ -134,7 +134,7 @@ python3 -m verl.mix_src.main_mix_ppo \
     trainer.n_gpus_per_node=8 \
     trainer.nnodes=1 \
     trainer.save_freq=50 \
-    trainer.test_freq=10 \
+    trainer.test_freq=50 \
     trainer.default_local_dir=$PROJ_DIR \
     actor_rollout_ref.actor.use_kl_loss=False \
     actor_rollout_ref.actor.use_sft_prefix_reward=False \
