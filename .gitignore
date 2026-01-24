@@ -4,3 +4,4 @@ checkpoints_main/
 exp_scripts_qwen2d5_math_zw/
 data/openr1*.parquet
 *.tar.gz
+update.bundle

@@ -36,7 +36,7 @@ get_algo_extra() {
         grpo)
             # GRPO: 基础 GRPO 算法，无 teacher，无 off-policy loss
             echo "algorithm.adv_estimator=grpo \
-actor_rollout_ref.actor.use_off_policy_loss=False \
+actor_rollout_ref.actor.use_off_policy_loss=True \
 actor_rollout_ref.actor.off_policy_normalize=False \
 actor_rollout_ref.actor.off_policy_loss_impl=token \
 actor_rollout_ref.actor.loss_remove_token_mean=True \
@@ -79,7 +79,7 @@ algorithm.grpo_use_std=False"
 actor_rollout_ref.teacher_ref.enable=True \
 actor_rollout_ref.teacher_ref.model_path=$TEACHER_MODEL_PATH \
 actor_rollout_ref.teacher_ref.fsdp_config.param_offload=True \
-actor_rollout_ref.actor.use_off_policy_loss=False \
+actor_rollout_ref.actor.use_off_policy_loss=True \
 actor_rollout_ref.actor.off_policy_normalize=False \
 actor_rollout_ref.actor.off_policy_loss_impl=token \
 actor_rollout_ref.actor.loss_remove_token_mean=False \
@@ -96,7 +96,7 @@ actor_rollout_ref.teacher_ref.teacher_coef=0.02 \
 actor_rollout_ref.teacher_ref.decay_rate=0.0001 \
 actor_rollout_ref.teacher_ref.model_path=$TEACHER_MODEL_PATH \
 actor_rollout_ref.teacher_ref.fsdp_config.param_offload=True \
-actor_rollout_ref.actor.use_off_policy_loss=False \
+actor_rollout_ref.actor.use_off_policy_loss=True \
 actor_rollout_ref.actor.off_policy_normalize=False \
 actor_rollout_ref.actor.off_policy_loss_impl=token \
 actor_rollout_ref.actor.loss_remove_token_mean=False \

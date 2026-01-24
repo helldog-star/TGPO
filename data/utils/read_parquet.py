@@ -1,6 +1,6 @@
 import pyarrow.parquet as pq
 
-file_path = "/mnt/nvme3/liuxinyu/TGPO/data/openr1.tgpo_correct.parquet"
+file_path = "/mnt/nvme3/liuxinyu/TGPO/data/openr1.a3b_correct_35k.parquet"
 
 try:
     # 创建 ParquetFile 对象，不立即加载数据

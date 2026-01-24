@@ -20,6 +20,7 @@ _SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$_SCRIPT_DIR"
 . "${_SCRIPT_DIR}/config/tasks.sh"
 . "${_SCRIPT_DIR}/config/env.sh"
+# . "$PROJECT_ROOT/config/env_run.sh" # runsong use
 
 # -------------------- 解析本脚本参数 --------------------
 ALGO=""
@@ -132,8 +133,8 @@ python3 -m verl.mix_src.main_mix_ppo \
     +trainer.val_before_train=False \
     trainer.n_gpus_per_node=8 \
     trainer.nnodes=1 \
-    trainer.save_freq=100 \
-    trainer.test_freq=50 \
+    trainer.save_freq=50 \
+    trainer.test_freq=10 \
     trainer.default_local_dir=$PROJ_DIR \
     actor_rollout_ref.actor.use_kl_loss=False \
     actor_rollout_ref.actor.use_sft_prefix_reward=False \
@@ -146,6 +147,6 @@ python3 -m verl.mix_src.main_mix_ppo \
     trainer.max_optim_to_keep=2 \
     data.shuffle=True \
     trainer.default_hdfs_dir=null \
-    trainer.total_training_steps=1 \
+    trainer.total_training_steps=300 \
     $EXTRA \
     "$@" > >(tee $LOG_FILE) 2> >(tee ${LOG_FILE}.err >&2)

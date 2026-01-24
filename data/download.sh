@@ -14,19 +14,19 @@ conda activate $CONDA_ENV_NAME
 
 # SYMLINKS="False"
 
-# # ================= 1. 下载 Qwen2.5-Math-1.5B =================
-# echo "正在下载 Qwen2.5-Math-1.5B-Instruct..."
-# huggingface-cli download Qwen/Qwen2.5-Math-1.5B-Instruct \
-#     --local-dir "$BASE_DIR/Qwen2.5-Math-1.5B-Instruct" \
-#     --local-dir-use-symlinks $SYMLINKS \
-#     --resume-download
+# ================= 1. 下载 Qwen2.5-Math-1.5B =================
+echo "正在下载 Qwen2.5-Math-1.5B..."
+huggingface-cli download Qwen/Qwen2.5-Math-1.5B \
+    --local-dir "$BASE_DIR/Qwen2.5-Math-1.5B" \
+    --local-dir-use-symlinks $SYMLINKS \
+    --resume-download
 
-# # ================= 2. 下载 Qwen2.5-Math-7B =================
-# echo "正在下载 Qwen2.5-Math-7B-Instruct..."
-# huggingface-cli download Qwen/Qwen2.5-Math-7B-Instruct \
-#     --local-dir "$BASE_DIR/Qwen2.5-Math-7B-Instruct" \
-#     --local-dir-use-symlinks $SYMLINKS \
-#     --resume-download
+# ================= 2. 下载 Qwen2.5-Math-7B =================
+echo "正在下载 Qwen2.5-Math-7B..."
+huggingface-cli download Qwen/Qwen2.5-Math-7B \
+    --local-dir "$BASE_DIR/Qwen2.5-Math-7B" \
+    --local-dir-use-symlinks $SYMLINKS \
+    --resume-download
 
 # # ================= 3. 下载 Qwen3-30B-A3B-Thinking-2507 =================
 # echo "正在下载 Qwen3-30B-A3B-Thinking-2507..."
@@ -46,11 +46,11 @@ conda activate $CONDA_ENV_NAME
 # ================= 5. 对齐 tokenizer（以 Qwen3-30B 为 teacher）=================
 echo "正在对齐 tokenizer: 1.5B、7B 以 30B 为 teacher..."
 python "$DATA_DIR/align_tokenizer.py" \
-    --student "$BASE_DIR/Qwen2.5-Math-1.5B-Instruct" \
+    --student "$BASE_DIR/Qwen2.5-Math-1.5B" \
     --teacher "$BASE_DIR/Qwen3-30B-A3B-Thinking-2507" \
 
 python "$DATA_DIR/align_tokenizer.py" \
-    --student "$BASE_DIR/Qwen2.5-Math-7B-Instruct" \
+    --student "$BASE_DIR/Qwen2.5-Math-7B" \
     --teacher "$BASE_DIR/Qwen3-30B-A3B-Thinking-2507" \
 
 echo "✅ 所有下载与 tokenizer 对齐已完成！"

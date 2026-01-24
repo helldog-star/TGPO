@@ -35,7 +35,7 @@ setup_common_env() {
 
 # ---------- 3.1 训练模型路径（可通过环境变量覆盖） ----------
 # 用作 actor_rollout_ref.model.path 的默认值
-MODEL_PATH="${MODEL_PATH:-/mnt/nvme3/liuxinyu/models/Qwen2.5-Math-1.5B-Instruct-aligned}"
+MODEL_PATH="${MODEL_PATH:-/mnt/nvme3/liuxinyu/models/Qwen2.5-Math-7B-aligned}"
 
 # ---------- 3.2 Teacher / Eval 路径（可通过环境变量覆盖） ----------
 # on-policy distill 方法用的 teacher 模型路径；不需要 teacher 的 algo 可传 none
