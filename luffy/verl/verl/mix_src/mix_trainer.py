@@ -165,6 +165,25 @@ def compute_advantage(data: DataProto, adv_estimator, gamma=1.0, lam=1.0, grpo_u
         )
         data.batch["advantages"] = advantages
         data.batch["returns"] = returns
+    elif adv_estimator == "rkl_topk":
+        responses = data.batch['responses']
+        response_length = responses.size(-1)
+        attention_mask = data.batch['attention_mask']
+        response_mask = attention_mask[:, -response_length:]
+        student_topk_ids = data.batch["student_topk_ids"]
+        student_topk_logits = data.batch["student_topk_logits"]
+        teacher_topk_ids = data.batch["teacher_topk_ids"]
+        teacher_topk_logits = data.batch["teacher_topk_logits"]
+        from .mix_core_alg import compute_rkl_topk_advantage
+        advantages, returns = compute_rkl_topk_advantage(
+            student_topk_ids=student_topk_ids,
+            student_topk_logits=student_topk_logits,
+            teacher_topk_ids=teacher_topk_ids,
+            teacher_topk_logits=teacher_topk_logits,
+            response_mask=response_mask,
+        )
+        data.batch["advantages"] = advantages
+        data.batch["returns"] = returns
     elif adv_estimator == "opsft":
         responses = data.batch['responses']
         response_length = responses.size(-1)
@@ -484,6 +503,8 @@ class MIXRayPPOTrainer(RayPPOTrainer):
             self.use_critic = False
         elif self.config.algorithm.adv_estimator == 'rkl':
             self.use_critic = False
+        elif self.config.algorithm.adv_estimator == 'rkl_topk':
+            self.use_critic = False
         elif self.config.algorithm.adv_estimator == 'grpo_merge_rkl':
             self.use_critic = False
         elif self.config.algorithm.adv_estimator == 'tipo':
@@ -699,6 +720,7 @@ class MIXRayPPOTrainer(RayPPOTrainer):
                             batch.meta_info['use_teacher'] = self.use_teacher_reference_policy  
                             ##NOTE: 保存adv_estimator,use_tipo_loss信息用于控制compute_log_prob的计算过程
                             batch.meta_info['adv_estimator'] = self.config.algorithm.adv_estimator
+                            batch.meta_info['rkl_topk_k'] = int(self.config.algorithm.get('rkl_topk_k', 100))
                             batch.meta_info['use_tipo_loss'] = self.config.actor_rollout_ref.actor.use_tipo_loss
                             
                             teacher_log_prob = self.teacher_ref_policy_wg.compute_teacher_ref_log_prob(batch)

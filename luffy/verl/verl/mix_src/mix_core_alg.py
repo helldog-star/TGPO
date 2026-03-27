@@ -387,6 +387,70 @@ def compute_rkl_advantage(
 
     return scores, scores
 
+
+def compute_rkl_topk_advantage(
+    student_topk_ids: torch.Tensor,
+    student_topk_logits: torch.Tensor,
+    teacher_topk_ids: torch.Tensor,
+    teacher_topk_logits: torch.Tensor,
+    response_mask: torch.Tensor,
+    chunk_size: int = 2048,
+) -> tuple[torch.Tensor, torch.Tensor]:
+    """
+    Compute reverse KL on the intersection of student/teacher top-k vocab per token.
+    The KL is computed token-wise with teacher distribution as the reference:
+      KL(teacher || student) over intersect(topk_teacher, topk_student).
+    """
+    bsz, response_length, _ = student_topk_ids.shape
+    flat_scores = torch.zeros(
+        bsz * response_length,
+        dtype=student_topk_logits.dtype,
+        device=student_topk_logits.device,
+    )
+    valid_token_idx = torch.nonzero(response_mask.reshape(-1) > 0, as_tuple=False).squeeze(-1)
+    if valid_token_idx.numel() == 0:
+        scores = flat_scores.view(bsz, response_length) * response_mask
+        return scores, scores
+
+    flat_student_ids = student_topk_ids.reshape(bsz * response_length, -1)
+    flat_student_logits = student_topk_logits.reshape(bsz * response_length, -1)
+    flat_teacher_ids = teacher_topk_ids.reshape(bsz * response_length, -1)
+    flat_teacher_logits = teacher_topk_logits.reshape(bsz * response_length, -1)
+
+    for start in range(0, valid_token_idx.numel(), chunk_size):
+        idx = valid_token_idx[start:start + chunk_size]
+        student_ids = flat_student_ids[idx]
+        student_logits = flat_student_logits[idx].float()
+        teacher_ids = flat_teacher_ids[idx]
+        teacher_logits = flat_teacher_logits[idx].float()
+
+        # Match teacher top-k ids to student top-k ids in each token position.
+        match = teacher_ids.unsqueeze(2) == student_ids.unsqueeze(1)  # [chunk, k, k]
+        has_match = match.any(dim=2)  # [chunk, k] over teacher-k axis
+        matched_student_pos = match.float().argmax(dim=2)  # [chunk, k], valid only where has_match=True
+        aligned_student_logits = torch.gather(student_logits, dim=1, index=matched_student_pos)
+
+        neg_inf = torch.finfo(student_logits.dtype).min
+        teacher_common_logits = teacher_logits.masked_fill(~has_match, neg_inf)
+        student_common_logits = aligned_student_logits.masked_fill(~has_match, neg_inf)
+
+        row_has_common = has_match.any(dim=1)
+        chunk_scores = torch.zeros(student_ids.size(0), dtype=student_logits.dtype, device=student_logits.device)
+        if row_has_common.any():
+            teacher_common_logits = teacher_common_logits[row_has_common]
+            student_common_logits = student_common_logits[row_has_common]
+
+            teacher_logp = teacher_common_logits - torch.logsumexp(teacher_common_logits, dim=1, keepdim=True)
+            student_logp = student_common_logits - torch.logsumexp(student_common_logits, dim=1, keepdim=True)
+            teacher_prob = torch.exp(teacher_logp)
+            reverse_kl = (teacher_prob * (teacher_logp - student_logp)).sum(dim=1)
+            chunk_scores[row_has_common] = reverse_kl
+
+        flat_scores[idx] = chunk_scores.to(flat_scores.dtype)
+
+    scores = flat_scores.view(bsz, response_length) * response_mask
+    return scores, scores
+
 # 所有tok grpo adv + teacher rkl [👎]
 def compute_grpo_merge_rkl_advantage(token_level_rewards: torch.Tensor,
                                     eos_mask: torch.Tensor,

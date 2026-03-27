@@ -387,7 +387,14 @@ class MIXDataParallelPPOActor(DataParallelPPOActor):
         return log_probs, entropys, predict_ids
     
 
-    def _forward_micro_batch(self, micro_batch, temperature, return_ids=False) -> Tuple[torch.Tensor, torch.Tensor]:
+    def _forward_micro_batch(
+        self,
+        micro_batch,
+        temperature,
+        return_ids=False,
+        return_topk=False,
+        topk_k=100,
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
         """
         Returns: 
             entropy: # (bs, response_len)
@@ -437,11 +444,16 @@ class MIXDataParallelPPOActor(DataParallelPPOActor):
                 # if use_sp: ((total_nnz / sp) + pad) ; if not use_sp: (batch, seqlen)
                 log_probs = logprobs_from_logits(logits=logits_rmpad, labels=input_ids_rmpad_rolled)
 
-                # 如果需要 return_ids，先在 unpad 状态下计算 argmax/topk，避免 OOM
+                # 如果需要 return_ids，先在 unpad 状态下计算 argmax，避免 OOM
                 predict_ids_rmpad = None
                 if return_ids:
                     # 获取预测的 token ID
                     predict_ids_rmpad = torch.argmax(logits_rmpad, dim=-1) # (total_nnz,)
+                topk_ids_rmpad = None
+                topk_logits_rmpad = None
+                if return_topk:
+                    topk_k = min(topk_k, logits_rmpad.size(-1))
+                    topk_logits_rmpad, topk_ids_rmpad = torch.topk(logits_rmpad, k=topk_k, dim=-1)
 
                 # gather log_prob if sp > 1
                 if self.use_ulysses_sp:
@@ -453,6 +465,9 @@ class MIXDataParallelPPOActor(DataParallelPPOActor):
                                                             padding_size=pad_size)
                     if return_ids and predict_ids_rmpad is not None:
                         predict_ids_rmpad = gather_outpus_and_unpad(predict_ids_rmpad, gather_dim=0, unpad_dim=0, padding_size=pad_size)
+                    if return_topk and topk_ids_rmpad is not None and topk_logits_rmpad is not None:
+                        topk_ids_rmpad = gather_outpus_and_unpad(topk_ids_rmpad, gather_dim=0, unpad_dim=0, padding_size=pad_size)
+                        topk_logits_rmpad = gather_outpus_and_unpad(topk_logits_rmpad, gather_dim=0, unpad_dim=0, padding_size=pad_size)
 
                 # pad back to (bsz, seqlen)
                 full_entropy = pad_input(hidden_states=entropy_rmpad.unsqueeze(-1),
@@ -467,6 +482,11 @@ class MIXDataParallelPPOActor(DataParallelPPOActor):
                 full_predict_ids = None
                 if return_ids:
                     full_predict_ids = pad_input(hidden_states=predict_ids_rmpad.unsqueeze(-1), indices=indices, batch=batch_size, seqlen=seqlen)
+                full_topk_ids = None
+                full_topk_logits = None
+                if return_topk:
+                    full_topk_ids = pad_input(hidden_states=topk_ids_rmpad, indices=indices, batch=batch_size, seqlen=seqlen)
+                    full_topk_logits = pad_input(hidden_states=topk_logits_rmpad, indices=indices, batch=batch_size, seqlen=seqlen)
                     
                 # only return response part:
                 entropy = full_entropy.squeeze(-1)[:, -response_length - 1:-1]  # (bsz, response_length)
@@ -475,6 +495,11 @@ class MIXDataParallelPPOActor(DataParallelPPOActor):
                 predict_ids = None
                 if return_ids:
                     predict_ids = full_predict_ids.squeeze(-1)[:, -response_length - 1:-1]
+                topk_ids = None
+                topk_logits = None
+                if return_topk:
+                    topk_ids = full_topk_ids[:, -response_length - 1:-1]
+                    topk_logits = full_topk_logits[:, -response_length - 1:-1]
 
             else:  # not using rmpad and no ulysses sp
                 output = self.actor_module(input_ids=input_ids,
@@ -489,12 +514,75 @@ class MIXDataParallelPPOActor(DataParallelPPOActor):
                 predict_ids = None
                 if return_ids:
                     predict_ids = torch.argmax(logits, dim=-1) # (bs, response_len)
+                topk_ids = None
+                topk_logits = None
+                if return_topk:
+                    topk_k = min(topk_k, logits.size(-1))
+                    topk_logits, topk_ids = torch.topk(logits, k=topk_k, dim=-1)
 
             # return entropy, log_probs
-            if return_ids:
+            if return_ids and return_topk:
+                return entropy, log_probs, predict_ids, topk_ids, topk_logits
+            elif return_ids:
                 return entropy, log_probs, predict_ids
+            elif return_topk:
+                return entropy, log_probs, topk_ids, topk_logits
             else:
                 return entropy, log_probs
+
+    def compute_log_prob_w_topk(self, data: DataProto, calculate_entropy=False, topk_k=100):
+        """Compute response log-prob with per-token top-k logits/ids."""
+        self.actor_module.eval()
+
+        micro_batch_size = data.meta_info['micro_batch_size']
+        temperature = data.meta_info['temperature']
+        use_dynamic_bsz = data.meta_info['use_dynamic_bsz']
+
+        select_keys = ['responses', 'input_ids', 'attention_mask', 'position_ids']
+        batch = data.select(batch_keys=select_keys).batch
+
+        if use_dynamic_bsz:
+            max_token_len = data.meta_info['max_token_len'] * self.ulysses_sequence_parallel_size
+            micro_batches, indices = rearrange_micro_batches(batch=batch, max_token_len=max_token_len)
+        else:
+            micro_batches = batch.split(micro_batch_size)
+
+        log_probs_lst = []
+        entropy_lst = []
+        topk_ids_lst = []
+        topk_logits_lst = []
+        for micro_batch in micro_batches:
+            with torch.no_grad():
+                entropy, log_probs, topk_ids, topk_logits = self._forward_micro_batch(
+                    micro_batch,
+                    temperature=temperature,
+                    return_topk=True,
+                    topk_k=topk_k,
+                )
+            log_probs_lst.append(log_probs)
+            topk_ids_lst.append(topk_ids)
+            topk_logits_lst.append(topk_logits)
+            if calculate_entropy:
+                entropy_lst.append(entropy)
+
+        log_probs = torch.concat(log_probs_lst, dim=0)
+        topk_ids = torch.concat(topk_ids_lst, dim=0)
+        topk_logits = torch.concat(topk_logits_lst, dim=0)
+        entropys = None
+        if calculate_entropy:
+            entropys = torch.concat(entropy_lst, dim=0)
+
+        if use_dynamic_bsz:
+            indices = list(itertools.chain.from_iterable(indices))
+            assert len(indices) == log_probs.size(0), f"{len(indices)} vs. {log_probs.size()}"
+            revert_indices = torch.tensor(get_reverse_idx(indices), dtype=torch.long)
+            log_probs = log_probs[revert_indices]
+            topk_ids = topk_ids[revert_indices]
+            topk_logits = topk_logits[revert_indices]
+            if calculate_entropy:
+                entropys = entropys[revert_indices]
+
+        return log_probs, entropys, topk_ids, topk_logits
 
 
     def compute_log_prob(self, data: DataProto, calculate_entropy=False) -> torch.Tensor:

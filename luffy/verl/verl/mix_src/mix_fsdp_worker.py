@@ -480,9 +480,27 @@ class MIXActorRolloutRefWorker(Worker):
         # perform recompute log_prob
         with self.ulysses_sharding_manager:
             data = self.ulysses_sharding_manager.preprocess_data(data)
-            
+
+            adv_estimator = data.meta_info.get('adv_estimator', None)
+            # rkl_topk: return student top-k logits/ids for low-memory reverse KL computation.
+            if adv_estimator == "rkl_topk":
+                topk_k = int(data.meta_info.get("rkl_topk_k", 100))
+                old_log_probs, entropys, student_topk_ids, student_topk_logits = self.actor.compute_log_prob_w_topk(
+                    data=data,
+                    calculate_entropy=True,
+                    topk_k=topk_k,
+                )
+                output = DataProto.from_dict(
+                    tensors={
+                        "old_log_probs": old_log_probs,
+                        "entropys": entropys,
+                        "student_topk_ids": student_topk_ids,
+                        "student_topk_logits": student_topk_logits,
+                    },
+                    meta_info={"temperature": self.config.rollout.temperature},
+                )
             # use_tipo_loss=True 时不需要在这里计算 teacher_ids_log_probs （phi_old对teacher预测token的log_prob）
-            if data.meta_info.get('use_teacher', False) and not data.meta_info.get('use_tipo_loss', False): 
+            elif data.meta_info.get('use_teacher', False) and not data.meta_info.get('use_tipo_loss', False):
                 assert "teacher_predict_ids" in data.batch.keys(), f"adv_estimator=xx_ce_xx need teacher_predict_ids in data.batch.keys()"
                 old_log_probs, entropys, teacher_ids_log_probs = self.actor.compute_teacher_ids_log_prob(data=data, calculate_entropy=True)
                 output = DataProto.from_dict(
@@ -547,19 +565,33 @@ class MIXActorRolloutRefWorker(Worker):
         data.meta_info['use_dynamic_bsz'] = self.config.teacher_ref.log_prob_use_dynamic_bsz
         with self.ulysses_sharding_manager:
             data = self.ulysses_sharding_manager.preprocess_data(data)
-
-            # if data.meta_info["adv_estimator"] in ["tipo", "tipo_mix", "tipo_high", "tipo_anneal", "opsft", "tipo_neg", "tipo_high_both", "tipo_top20ptok"]:
-            
-            log_probs, entropys, predict_ids = self.teacher_ref_policy.compute_log_prob_w_ids(data=data)
-            # 对teacher预测ids padding部分按照词表替换
-            response_length = data.batch["responses"].size(1)
-            attention_mask = data.batch["attention_mask"][:, -response_length-1:-1]
-            predict_ids = predict_ids.masked_fill(attention_mask == 0, self.tokenizer.pad_token_id)
-            output = DataProto.from_dict(tensors={'teacher_log_prob': log_probs, "teacher_predict_ids": predict_ids})
-            
-            # else:
-            #     log_probs, entropys = self.teacher_ref_policy.compute_log_prob(data=data)
-            #     output = DataProto.from_dict(tensors={'teacher_log_prob': log_probs})
+            adv_estimator = data.meta_info.get("adv_estimator", None)
+            if adv_estimator == "rkl_topk":
+                topk_k = int(data.meta_info.get("rkl_topk_k", 100))
+                log_probs, entropys, teacher_topk_ids, teacher_topk_logits = self.teacher_ref_policy.compute_log_prob_w_topk(
+                    data=data,
+                    calculate_entropy=True,
+                    topk_k=topk_k,
+                )
+                predict_ids = teacher_topk_ids[..., 0]
+                response_length = data.batch["responses"].size(1)
+                attention_mask = data.batch["attention_mask"][:, -response_length-1:-1]
+                predict_ids = predict_ids.masked_fill(attention_mask == 0, self.tokenizer.pad_token_id)
+                output = DataProto.from_dict(
+                    tensors={
+                        "teacher_log_prob": log_probs,
+                        "teacher_predict_ids": predict_ids,
+                        "teacher_topk_ids": teacher_topk_ids,
+                        "teacher_topk_logits": teacher_topk_logits,
+                    }
+                )
+            else:
+                log_probs, entropys, predict_ids = self.teacher_ref_policy.compute_log_prob_w_ids(data=data)
+                # 对teacher预测ids padding部分按照词表替换
+                response_length = data.batch["responses"].size(1)
+                attention_mask = data.batch["attention_mask"][:, -response_length-1:-1]
+                predict_ids = predict_ids.masked_fill(attention_mask == 0, self.tokenizer.pad_token_id)
+                output = DataProto.from_dict(tensors={'teacher_log_prob': log_probs, "teacher_predict_ids": predict_ids})
             
             output = self.ulysses_sharding_manager.postprocess_data(output)
         
