@@ -1,6 +1,7 @@
 import numpy as np
 import torch
 from collections import defaultdict
+import time
 
 import verl.utils.torch_functional as verl_F
 
@@ -394,7 +395,7 @@ def compute_rkl_topk_advantage(
     teacher_topk_ids: torch.Tensor,
     teacher_topk_logits: torch.Tensor,
     response_mask: torch.Tensor,
-    chunk_size: int = 2048,
+    chunk_size: int = 8192,
 ) -> tuple[torch.Tensor, torch.Tensor]:
     """
     Compute distribution-level top-k reverse KL approximation:
@@ -402,6 +403,7 @@ def compute_rkl_topk_advantage(
     and return advantage = -RKL_topk.
     """
     bsz, response_length, _ = student_topk_ids.shape
+    t0 = time.perf_counter()
     flat_scores = torch.zeros(
         bsz * response_length,
         dtype=student_topk_logits.dtype,
@@ -416,22 +418,37 @@ def compute_rkl_topk_advantage(
     flat_student_logits = student_topk_logits.reshape(bsz * response_length, -1)
     flat_teacher_ids = teacher_topk_ids.reshape(bsz * response_length, -1)
     flat_teacher_logits = teacher_topk_logits.reshape(bsz * response_length, -1)
+    total_pairs = 0
+    matched_pairs = 0
+    total_rows = 0
+    matched_rows = 0
 
     for start in range(0, valid_token_idx.numel(), chunk_size):
         idx = valid_token_idx[start:start + chunk_size]
-        student_ids = flat_student_ids[idx]
+        student_ids = flat_student_ids[idx].long()
         student_logits = flat_student_logits[idx].float()
-        teacher_ids = flat_teacher_ids[idx]
+        teacher_ids = flat_teacher_ids[idx].long()
         teacher_logits = flat_teacher_logits[idx].float()
         chunk_scores = torch.zeros(student_ids.size(0), dtype=student_logits.dtype, device=student_logits.device)
-        # Align student logits to teacher top-k ids via id matching, then
-        # compute KL(teacher || student) on intersection support.
-        match = teacher_ids.unsqueeze(2) == student_ids.unsqueeze(1)  # [chunk, k_teacher, k_student]
-        has_match = match.any(dim=2)  # [chunk, k_teacher]
+
+        # Faster than materializing [chunk, k, k] boolean match tensor:
+        # sort student ids then locate teacher ids by batched binary search.
+        k_student = student_ids.size(1)
+        student_sorted_ids, student_sort_idx = torch.sort(student_ids, dim=1)
+        student_sorted_logits = torch.gather(student_logits, dim=1, index=student_sort_idx)
+
+        search_pos = torch.searchsorted(student_sorted_ids, teacher_ids, right=False)
+        in_bound = search_pos < k_student
+        safe_pos = search_pos.clamp(max=k_student - 1)
+        matched_student_ids = torch.gather(student_sorted_ids, dim=1, index=safe_pos)
+        has_match = in_bound & (matched_student_ids == teacher_ids)
         row_has_common = has_match.any(dim=1)
+        matched_pairs += int(has_match.sum().item())
+        total_pairs += int(has_match.numel())
+        matched_rows += int(row_has_common.sum().item())
+        total_rows += int(row_has_common.numel())
         if row_has_common.any():
-            matched_student_pos = match.float().argmax(dim=2)
-            aligned_student_logits = torch.gather(student_logits, dim=1, index=matched_student_pos)
+            aligned_student_logits = torch.gather(student_sorted_logits, dim=1, index=safe_pos)
 
             neg_inf = torch.finfo(student_logits.dtype).min
             teacher_common_logits = teacher_logits.masked_fill(~has_match, neg_inf)
@@ -450,6 +467,15 @@ def compute_rkl_topk_advantage(
         flat_scores[idx] = chunk_scores.to(flat_scores.dtype)
 
     scores = flat_scores.view(bsz, response_length) * response_mask
+    elapsed_ms = (time.perf_counter() - t0) * 1000.0
+    pair_coverage = matched_pairs / max(total_pairs, 1)
+    row_coverage = matched_rows / max(total_rows, 1)
+    print(
+        f"[rkl_topk] time_ms={elapsed_ms:.1f} "
+        f"pair_coverage={pair_coverage:.3f} "
+        f"token_coverage={row_coverage:.3f} "
+        f"valid_tokens={int(valid_token_idx.numel())} chunk_size={chunk_size}"
+    )
     return scores, scores
 
 # 所有tok grpo adv + teacher rkl [👎]
