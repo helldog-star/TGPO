@@ -397,9 +397,9 @@ def compute_rkl_topk_advantage(
     chunk_size: int = 2048,
 ) -> tuple[torch.Tensor, torch.Tensor]:
     """
-    Compute reverse KL on the intersection of student/teacher top-k vocab per token.
-    The KL is computed token-wise with teacher distribution as the reference:
-      KL(teacher || student) over intersect(topk_teacher, topk_student).
+    Compute distribution-level top-k reverse KL approximation:
+      RKL_topk ~= KL(teacher || student) on intersect(topk_teacher, topk_student)
+    and return advantage = -RKL_topk.
     """
     bsz, response_length, _ = student_topk_ids.shape
     flat_scores = torch.zeros(
@@ -423,28 +423,29 @@ def compute_rkl_topk_advantage(
         student_logits = flat_student_logits[idx].float()
         teacher_ids = flat_teacher_ids[idx]
         teacher_logits = flat_teacher_logits[idx].float()
-
-        # Match teacher top-k ids to student top-k ids in each token position.
-        match = teacher_ids.unsqueeze(2) == student_ids.unsqueeze(1)  # [chunk, k, k]
-        has_match = match.any(dim=2)  # [chunk, k] over teacher-k axis
-        matched_student_pos = match.float().argmax(dim=2)  # [chunk, k], valid only where has_match=True
-        aligned_student_logits = torch.gather(student_logits, dim=1, index=matched_student_pos)
-
-        neg_inf = torch.finfo(student_logits.dtype).min
-        teacher_common_logits = teacher_logits.masked_fill(~has_match, neg_inf)
-        student_common_logits = aligned_student_logits.masked_fill(~has_match, neg_inf)
-
-        row_has_common = has_match.any(dim=1)
         chunk_scores = torch.zeros(student_ids.size(0), dtype=student_logits.dtype, device=student_logits.device)
+        # Align student logits to teacher top-k ids via id matching, then
+        # compute KL(teacher || student) on intersection support.
+        match = teacher_ids.unsqueeze(2) == student_ids.unsqueeze(1)  # [chunk, k_teacher, k_student]
+        has_match = match.any(dim=2)  # [chunk, k_teacher]
+        row_has_common = has_match.any(dim=1)
         if row_has_common.any():
+            matched_student_pos = match.float().argmax(dim=2)
+            aligned_student_logits = torch.gather(student_logits, dim=1, index=matched_student_pos)
+
+            neg_inf = torch.finfo(student_logits.dtype).min
+            teacher_common_logits = teacher_logits.masked_fill(~has_match, neg_inf)
+            student_common_logits = aligned_student_logits.masked_fill(~has_match, neg_inf)
+
             teacher_common_logits = teacher_common_logits[row_has_common]
             student_common_logits = student_common_logits[row_has_common]
 
             teacher_logp = teacher_common_logits - torch.logsumexp(teacher_common_logits, dim=1, keepdim=True)
             student_logp = student_common_logits - torch.logsumexp(student_common_logits, dim=1, keepdim=True)
             teacher_prob = torch.exp(teacher_logp)
-            reverse_kl = (teacher_prob * (teacher_logp - student_logp)).sum(dim=1)
-            chunk_scores[row_has_common] = reverse_kl
+            rkl = (teacher_prob * (teacher_logp - student_logp)).sum(dim=1)
+            # advantage = -RKL so that maximizing advantage minimizes RKL.
+            chunk_scores[row_has_common] = -rkl
 
         flat_scores[idx] = chunk_scores.to(flat_scores.dtype)
 
