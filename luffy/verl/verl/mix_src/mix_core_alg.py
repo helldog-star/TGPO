@@ -399,7 +399,7 @@ def compute_rkl_topk_advantage(
 ) -> tuple[torch.Tensor, torch.Tensor]:
     """
     Compute distribution-level top-k reverse KL approximation:
-      RKL_topk ~= KL(teacher || student) on intersect(topk_teacher, topk_student)
+      RKL_topk ~= KL(student || teacher) on intersect(topk_teacher, topk_student)
     and return advantage = -RKL_topk.
     """
     bsz, response_length, _ = student_topk_ids.shape
@@ -459,8 +459,8 @@ def compute_rkl_topk_advantage(
 
             teacher_logp = teacher_common_logits - torch.logsumexp(teacher_common_logits, dim=1, keepdim=True)
             student_logp = student_common_logits - torch.logsumexp(student_common_logits, dim=1, keepdim=True)
-            teacher_prob = torch.exp(teacher_logp)
-            rkl = (teacher_prob * (teacher_logp - student_logp)).sum(dim=1)
+            student_prob = torch.exp(student_logp)
+            rkl = (student_prob * (student_logp - teacher_logp)).sum(dim=1)
             # advantage = -RKL so that maximizing advantage minimizes RKL.
             chunk_scores[row_has_common] = -rkl
 
