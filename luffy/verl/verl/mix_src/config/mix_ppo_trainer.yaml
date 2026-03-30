@@ -91,6 +91,7 @@ actor_rollout_ref:
     sft_loss_coef: 1.0
     use_sft_multitask_loss: False
     use_tipo_loss: False
+    use_tipo_topk_kl: False
     use_kdrl_loss: False
 
   ref:

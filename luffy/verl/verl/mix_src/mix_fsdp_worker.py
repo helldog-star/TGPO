@@ -566,7 +566,8 @@ class MIXActorRolloutRefWorker(Worker):
         with self.ulysses_sharding_manager:
             data = self.ulysses_sharding_manager.preprocess_data(data)
             adv_estimator = data.meta_info.get("adv_estimator", None)
-            if adv_estimator == "rkl_topk":
+            use_tipo_topk_kl = data.meta_info.get("use_tipo_topk_kl", False)
+            if adv_estimator == "rkl_topk" or use_tipo_topk_kl:
                 topk_k = int(data.meta_info.get("rkl_topk_k", 100))
                 log_probs, entropys, teacher_topk_ids, teacher_topk_logits = self.teacher_ref_policy.compute_log_prob_w_topk(
                     data=data,

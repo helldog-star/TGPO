@@ -260,6 +260,8 @@ def compute_token_on_tipo_loss(
     teacher_ids_log_probs: torch.Tensor,
     cliprange: float,
     teacher_coef: float = 0.1,
+    teacher_topk_logits: torch.Tensor | None = None,
+    student_teacher_topk_log_probs: torch.Tensor | None = None,
     loss_remove_clip: bool = False,
     loss_remove_token_mean: bool = False
 ):
@@ -301,8 +303,22 @@ def compute_token_on_tipo_loss(
     
     pg_clipfrac = verl_F.masked_mean(torch.gt(pg_losses2, pg_losses).float(), eos_mask)
     
-    # 最大化student对teacher预测token的log概率，等价于最小化负log概率（负对数似然）
+    # 默认 teacher 正则：student forcing teacher token 的 CE（硬标签）。
     teacher_reg_loss = -verl_F.masked_mean(teacher_ids_log_probs, eos_mask)
+    # 可选 teacher 正则：在 teacher top-k 分布上做 forward KL: KL(teacher || student)。
+    # 这里使用 teacher 的 top-k logits 归一化为分布，并对 student 在同一 token 集合上的 log-prob 做对齐。
+    if teacher_topk_logits is not None and student_teacher_topk_log_probs is not None:
+        teacher_log_probs_topk = torch.log_softmax(teacher_topk_logits.float(), dim=-1)
+        teacher_probs_topk = torch.exp(teacher_log_probs_topk)
+        fwd_kl_token = torch.sum(
+            teacher_probs_topk * (teacher_log_probs_topk - student_teacher_topk_log_probs.float()),
+            dim=-1,
+        )
+        if loss_remove_token_mean is True:
+            teacher_reg_loss = (fwd_kl_token * eos_mask).sum() / eos_mask.shape[-1]
+        else:
+            teacher_reg_loss = verl_F.masked_mean(fwd_kl_token, eos_mask)
+
     total_loss = pg_loss + teacher_coef * teacher_reg_loss
     
     return total_loss, pg_loss, teacher_reg_loss, pg_clipfrac, ppo_kl

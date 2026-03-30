@@ -77,6 +77,9 @@ class MIXDataParallelPPOActor(DataParallelPPOActor):
         if self.config.use_tipo_loss:
             teacher_coef = data.meta_info["teacher_coef"]
             select_keys.append('teacher_predict_ids')
+            if self.config.get('use_tipo_topk_kl', False):
+                select_keys.append('teacher_topk_ids')
+                select_keys.append('teacher_topk_logits')
         if self.config.use_kdrl_loss:
             teacher_coef = data.meta_info["teacher_coef"]
             select_keys.append('teacher_log_prob')
@@ -117,7 +120,23 @@ class MIXDataParallelPPOActor(DataParallelPPOActor):
                     entropy_coeff = self.config.entropy_coeff
 
                     if self.config.use_tipo_loss:
-                        entropy, log_prob, teacher_ids_log_probs = self._forward_teacher_ids_micro_batch(micro_batch=data, temperature=temperature)
+                        student_teacher_topk_log_probs = None
+                        teacher_topk_logits = None
+                        use_tipo_topk_kl = self.config.get('use_tipo_topk_kl', False) and \
+                            ('teacher_topk_ids' in data) and ('teacher_topk_logits' in data)
+                        if use_tipo_topk_kl:
+                            entropy, log_prob, teacher_ids_log_probs, student_teacher_topk_log_probs = \
+                                self._forward_teacher_ids_micro_batch(
+                                    micro_batch=data,
+                                    temperature=temperature,
+                                    return_teacher_topk_log_probs=True,
+                                )
+                            teacher_topk_logits = data['teacher_topk_logits']
+                        else:
+                            entropy, log_prob, teacher_ids_log_probs = self._forward_teacher_ids_micro_batch(
+                                micro_batch=data,
+                                temperature=temperature,
+                            )
                     else:
                         entropy, log_prob = self._forward_micro_batch(micro_batch=data, temperature=temperature)
 
@@ -212,6 +231,8 @@ class MIXDataParallelPPOActor(DataParallelPPOActor):
                                                                                             eos_mask=response_mask,
                                                                                             teacher_ids_log_probs=teacher_ids_log_probs,
                                                                                             teacher_coef=teacher_coef,
+                                                                                            teacher_topk_logits=teacher_topk_logits,
+                                                                                            student_teacher_topk_log_probs=student_teacher_topk_log_probs,
                                                                                             cliprange=clip_ratio,
                                                                                             loss_remove_token_mean=self.config.loss_remove_token_mean,
                                                                                             loss_remove_clip=self.config.loss_remove_clip)
@@ -712,7 +733,12 @@ class MIXDataParallelPPOActor(DataParallelPPOActor):
         return log_probs, entropys, teacher_ids_log_probs
 
 
-    def _forward_teacher_ids_micro_batch(self, micro_batch, temperature) -> Tuple[torch.Tensor, torch.Tensor]:
+    def _forward_teacher_ids_micro_batch(
+        self,
+        micro_batch,
+        temperature,
+        return_teacher_topk_log_probs: bool = False,
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
         """
         Returns: 
             entropy: # (bs, response_len)
@@ -725,6 +751,7 @@ class MIXDataParallelPPOActor(DataParallelPPOActor):
             attention_mask = micro_batch['attention_mask']
             position_ids = micro_batch['position_ids']
             teacher_predict_ids = micro_batch["teacher_predict_ids"]
+            teacher_topk_ids = micro_batch.get("teacher_topk_ids", None)
 
             if self.use_remove_padding:
                 input_ids_rmpad, indices, *_ = unpad_input(input_ids.unsqueeze(-1),
@@ -741,6 +768,19 @@ class MIXDataParallelPPOActor(DataParallelPPOActor):
                 teacher_ids_rmpad = index_first_axis(
                     rearrange(full_teacher_ids.unsqueeze(-1), "b s ... -> (b s) ..."), indices
                 ).transpose(0, 1) # (1, total_nnz)
+                teacher_topk_ids_rmpad_rolled = None
+                if return_teacher_topk_log_probs and teacher_topk_ids is not None:
+                    teacher_k = teacher_topk_ids.size(-1)
+                    full_teacher_topk_ids = torch.zeros(
+                        (batch_size, seqlen, teacher_k),
+                        dtype=teacher_topk_ids.dtype,
+                        device=teacher_topk_ids.device,
+                    )
+                    full_teacher_topk_ids[:, -response_length:, :] = teacher_topk_ids
+                    teacher_topk_ids_rmpad = index_first_axis(
+                        rearrange(full_teacher_topk_ids, "b s k -> (b s) k"), indices
+                    )
+                    teacher_topk_ids_rmpad_rolled = torch.roll(teacher_topk_ids_rmpad, shifts=-1, dims=0)
 
 
                 # for compute the log_prob
@@ -756,6 +796,14 @@ class MIXDataParallelPPOActor(DataParallelPPOActor):
                                                                                 self.ulysses_sequence_parallel_size)
                     teacher_ids_rmpad_rolled, _, _ = ulysses_pad_and_slice_inputs(teacher_ids_rmpad_rolled, None, 
                                                                                     self.ulysses_sequence_parallel_size)
+                    if teacher_topk_ids_rmpad_rolled is not None:
+                        teacher_topk_ids_rmpad_rolled_t = teacher_topk_ids_rmpad_rolled.transpose(0, 1)
+                        teacher_topk_ids_rmpad_rolled_t, _, _ = ulysses_pad_and_slice_inputs(
+                            teacher_topk_ids_rmpad_rolled_t,
+                            None,
+                            self.ulysses_sequence_parallel_size,
+                        )
+                        teacher_topk_ids_rmpad_rolled = teacher_topk_ids_rmpad_rolled_t.transpose(0, 1)
 
                 input_ids_rmpad_rolled = input_ids_rmpad_rolled.squeeze(0)  # ((total_nnz / sp) + pad)
                 teacher_ids_rmpad_rolled = teacher_ids_rmpad_rolled.squeeze(0)
@@ -779,6 +827,14 @@ class MIXDataParallelPPOActor(DataParallelPPOActor):
                     logits=logits_rmpad,
                     labels=teacher_ids_rmpad_rolled
                 )
+                teacher_topk_log_probs = None
+                if teacher_topk_ids_rmpad_rolled is not None:
+                    logits_log_softmax_rmpad = torch.log_softmax(logits_rmpad.float(), dim=-1)
+                    teacher_topk_log_probs = torch.gather(
+                        logits_log_softmax_rmpad,
+                        dim=-1,
+                        index=teacher_topk_ids_rmpad_rolled.long(),
+                    ).to(logits_rmpad.dtype)
 
                 # gather log_prob if sp > 1
                 if self.use_ulysses_sp:
@@ -790,6 +846,13 @@ class MIXDataParallelPPOActor(DataParallelPPOActor):
                         unpad_dim=0, 
                         padding_size=pad_size
                     )
+                    if teacher_topk_log_probs is not None:
+                        teacher_topk_log_probs = gather_outpus_and_unpad(
+                            teacher_topk_log_probs,
+                            gather_dim=0,
+                            unpad_dim=0,
+                            padding_size=pad_size,
+                        )
                     entropy_rmpad = gather_outpus_and_unpad(entropy_rmpad,
                                                             gather_dim=0,
                                                             unpad_dim=0,
@@ -809,11 +872,22 @@ class MIXDataParallelPPOActor(DataParallelPPOActor):
                                             batch=batch_size, 
                                             seqlen=seqlen
                                         )
+                full_teacher_topk_log_probs = None
+                if teacher_topk_log_probs is not None:
+                    full_teacher_topk_log_probs = pad_input(
+                        hidden_states=teacher_topk_log_probs,
+                        indices=indices,
+                        batch=batch_size,
+                        seqlen=seqlen,
+                    )
 
                 # only return response part:
                 entropy = full_entropy.squeeze(-1)[:, -response_length - 1:-1]  # (bsz, response_length)
                 log_probs = full_log_probs.squeeze(-1)[:, -response_length - 1:-1]  # (bsz, response_length)
                 teacher_ids_log_probs = full_teacher_ids_log_probs.squeeze(-1)[:, -response_length-1:-1]
+                student_teacher_topk_log_probs = None
+                if full_teacher_topk_log_probs is not None:
+                    student_teacher_topk_log_probs = full_teacher_topk_log_probs[:, -response_length-1:-1]
 
             else:  # not using rmpad and no ulysses sp
                 output = self.actor_module(input_ids=input_ids,
@@ -826,6 +900,16 @@ class MIXDataParallelPPOActor(DataParallelPPOActor):
                 log_probs = logprobs_from_logits(logits, micro_batch['responses'])
                 teacher_ids_log_probs = logprobs_from_logits(logits, teacher_predict_ids)
                 entropy = verl_F.entropy_from_logits(logits)  # (bsz, response_length)
+                student_teacher_topk_log_probs = None
+                if return_teacher_topk_log_probs and teacher_topk_ids is not None:
+                    logits_log_softmax = torch.log_softmax(logits.float(), dim=-1)
+                    student_teacher_topk_log_probs = torch.gather(
+                        logits_log_softmax,
+                        dim=-1,
+                        index=teacher_topk_ids.long(),
+                    ).to(logits.dtype)
 
+            if return_teacher_topk_log_probs:
+                return entropy, log_probs, teacher_ids_log_probs, student_teacher_topk_log_probs
             return entropy, log_probs, teacher_ids_log_probs
 

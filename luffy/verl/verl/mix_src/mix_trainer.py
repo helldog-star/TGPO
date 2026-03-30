@@ -722,6 +722,7 @@ class MIXRayPPOTrainer(RayPPOTrainer):
                             batch.meta_info['adv_estimator'] = self.config.algorithm.adv_estimator
                             batch.meta_info['rkl_topk_k'] = int(self.config.algorithm.get('rkl_topk_k', 100))
                             batch.meta_info['use_tipo_loss'] = self.config.actor_rollout_ref.actor.use_tipo_loss
+                            batch.meta_info['use_tipo_topk_kl'] = self.config.actor_rollout_ref.actor.get('use_tipo_topk_kl', False)
                             
                             teacher_log_prob = self.teacher_ref_policy_wg.compute_teacher_ref_log_prob(batch)
                             batch = batch.union(teacher_log_prob)
