@@ -19,23 +19,27 @@ export NO_PROXY="127.0.0.1,localhost"
 # Set XFormers backend to avoid CUDA errors
 export VLLM_ATTENTION_BACKEND=XFORMERS
 
-export MODEL_PATH=/mnt/dolphinfs/ssd_pool/docker/user/hadoop-nlp-sh02/hadoop-aipnlp/FMG/liuxinyu67/models/Qwen2.5-Math-7B-aligned
+export MODEL_PATH=/mnt/dolphinfs/ssd_pool/docker/user/hadoop-nlp-sh02/hadoop-aipnlp/FMG/liuxinyu67/models/Qwen2.5-Math-1.5B-aligned
 export TEACHER_MODEL_PATH=/mnt/dolphinfs/ssd_pool/docker/user/hadoop-nlp-sh02/hadoop-aipnlp/FMG/liuxinyu67/models/Qwen3-30B-A3B-Thinking-2507-aligned
 export DATA_DIR=$ROOT/data/
-export EXP_NAME=tipo_top20ptok_w5e-2_qwen2d5_math_7b_a3b35k_new
+export EXP_NAME=rkl_reg_k1_qwen2d5_math_1d5b_a3b35k
 
-export WANDB_PROJECT="luffy-mipo"
+export WANDB_PROJECT="tipo"
 export WANDB_MODE="offline"
 export WANDB_API_KEY="b6d66b4632451b4d1908d9286fdafc46553519a7"
 export WANDB_DIR=$ROOT/checkpoints/$EXP_NAME/wandb
 mkdir -p $WANDB_DIR
 export PROJ_DIR=$ROOT/checkpoints/$EXP_NAME
 
+# 创建日志目录
+mkdir -p $PROJ_DIR/logs
+LOG_FILE=$PROJ_DIR/logs/training_$(date +%Y%m%d_%H%M%S).log
+
 cd $ROOT/luffy/verl/
 
 # Train over a single node, 8 A100-80GB GPUs.
 python3 -m verl.mix_src.main_mix_ppo \
-    algorithm.adv_estimator=mipo_top20ptok \
+    algorithm.adv_estimator=grpo \
     data.train_files=$DATA_DIR/openr1.a3b_correct_35k.parquet \
     data.val_files=$DATA_DIR/valid.parquet \
     data.train_batch_size=128 \
@@ -43,7 +47,9 @@ python3 -m verl.mix_src.main_mix_ppo \
     data.max_prompt_length=1024 \
     data.max_response_length=8192 \
     actor_rollout_ref.teacher_ref.enable=True \
-    actor_rollout_ref.teacher_ref.teacher_weight=0.05 \
+    actor_rollout_ref.teacher_ref.teacher_coef=1.0 \
+    actor_rollout_ref.teacher_ref.decay_rate=0.0 \
+    actor_rollout_ref.teacher_ref.min_teacher_coef=0.0 \
     actor_rollout_ref.teacher_ref.model_path=$TEACHER_MODEL_PATH \
     actor_rollout_ref.teacher_ref.fsdp_config.param_offload=True \
     actor_rollout_ref.model.path=$MODEL_PATH \
@@ -79,7 +85,7 @@ python3 -m verl.mix_src.main_mix_ppo \
     trainer.n_gpus_per_node=8 \
     trainer.nnodes=1 \
     trainer.save_freq=50 \
-    trainer.test_freq=10 \
+    trainer.test_freq=20 \
     trainer.default_local_dir=$PROJ_DIR \
     actor_rollout_ref.actor.use_kl_loss=False \
     actor_rollout_ref.actor.use_sft_prefix_reward=False \
@@ -90,13 +96,15 @@ python3 -m verl.mix_src.main_mix_ppo \
     actor_rollout_ref.rollout.max_prefix_ratio=0.0 \
     actor_rollout_ref.rollout.prefix_reward_weight_alpha=1.0 \
     actor_rollout_ref.ref.use_ref=False \
-    actor_rollout_ref.actor.use_off_policy_loss=True \
+    actor_rollout_ref.actor.use_off_policy_loss=False \
+    actor_rollout_ref.actor.use_kdrl_loss=False \
+    actor_rollout_ref.actor.use_rkl_reg_loss=True \
     actor_rollout_ref.actor.off_policy_normalize=False \
     actor_rollout_ref.actor.off_policy_loss_impl=token \
-    algorithm.grpo_use_std=False \
-    actor_rollout_ref.actor.loss_remove_token_mean=True \
+    algorithm.grpo_use_std=True \
+    actor_rollout_ref.actor.loss_remove_token_mean=False \
     data.reward_impl_version=3 \
     trainer.max_optim_to_keep=2 \
     data.shuffle=True \
     trainer.default_hdfs_dir=null \
-    trainer.total_training_steps=500 "${@:1}"
+    trainer.total_training_steps=300 "${@:1}" > >(tee $LOG_FILE) 2> >(tee ${LOG_FILE}.err >&2)

@@ -248,132 +248,6 @@ def compute_advantage(data: DataProto, adv_estimator, gamma=1.0, lam=1.0, grpo_u
         )
         data.batch["advantages"] = advantages
         data.batch["returns"] = returns
-    elif adv_estimator == "tipo_mix":
-        token_level_rewards = data.batch['token_level_rewards']
-        index = data.non_tensor_batch['uid']
-        responses = data.batch['responses']
-        response_length = responses.size(-1)
-        attention_mask = data.batch['attention_mask']
-        response_mask = attention_mask[:, -response_length:]
-        teacher_predict_ids = data.batch["teacher_predict_ids"]
-        teacher_log_prob = data.batch["teacher_log_prob"]
-        teacher_ids_log_probs=data.batch["teacher_ids_log_probs"]
-        entropys = data.batch["entropys"]
-        teacher_coef = data.meta_info["teacher_coef"]
-        from .mix_core_alg import compute_tipo_mix_advantage
-        advantages, returns = compute_tipo_mix_advantage(
-            token_level_rewards=token_level_rewards,
-            entropys=entropys,
-            eos_mask=response_mask,
-            index=index,
-            use_std=grpo_use_std,
-            teacher_predict_ids=teacher_predict_ids,
-            student_predict_ids=responses,
-            teacher_ids_log_probs=teacher_ids_log_probs,
-            teacher_coef = teacher_coef
-        )
-        data.batch["advantages"] = advantages
-        data.batch["returns"] = returns
-    elif adv_estimator == "tipo_high":
-        token_level_rewards = data.batch['token_level_rewards']
-        index = data.non_tensor_batch['uid']
-        responses = data.batch['responses']
-        response_length = responses.size(-1)
-        attention_mask = data.batch['attention_mask']
-        response_mask = attention_mask[:, -response_length:]
-        teacher_predict_ids = data.batch["teacher_predict_ids"]
-        teacher_log_prob = data.batch["teacher_log_prob"]
-        teacher_ids_log_probs=data.batch["teacher_ids_log_probs"]
-        entropys = data.batch["entropys"]
-        teacher_coef = data.meta_info["teacher_coef"]
-        from .mix_core_alg import compute_tipo_high_advantage
-        advantages, returns = compute_tipo_high_advantage(
-            token_level_rewards=token_level_rewards,
-            entropys=entropys,
-            eos_mask=response_mask,
-            index=index,
-            use_std=grpo_use_std,
-            teacher_predict_ids=teacher_predict_ids,
-            student_predict_ids=responses,
-            teacher_ids_log_probs=teacher_ids_log_probs,
-            teacher_coef = teacher_coef
-        )
-        data.batch["advantages"] = advantages
-        data.batch["returns"] = returns
-    elif adv_estimator == "tipo_high_both":
-        token_level_rewards = data.batch['token_level_rewards']
-        index = data.non_tensor_batch['uid']
-        responses = data.batch['responses']
-        response_length = responses.size(-1)
-        attention_mask = data.batch['attention_mask']
-        response_mask = attention_mask[:, -response_length:]
-        teacher_predict_ids = data.batch["teacher_predict_ids"]
-        teacher_log_prob = data.batch["teacher_log_prob"]
-        teacher_ids_log_probs=data.batch["teacher_ids_log_probs"]
-        entropys = data.batch["entropys"]
-        from .mix_core_alg import compute_tipo_high_both_advantage
-        advantages, returns = compute_tipo_high_both_advantage(
-            token_level_rewards=token_level_rewards,
-            entropys=entropys,
-            eos_mask=response_mask,
-            index=index,
-            use_std=grpo_use_std,
-            teacher_predict_ids=teacher_predict_ids,
-            student_predict_ids=responses,
-            teacher_ids_log_probs=teacher_ids_log_probs
-        )
-        data.batch["advantages"] = advantages
-        data.batch["returns"] = returns
-    elif adv_estimator == "tipo_neg":
-        token_level_rewards = data.batch['token_level_rewards']
-        index = data.non_tensor_batch['uid']
-        responses = data.batch['responses']
-        response_length = responses.size(-1)
-        attention_mask = data.batch['attention_mask']
-        response_mask = attention_mask[:, -response_length:]
-        teacher_predict_ids = data.batch["teacher_predict_ids"]
-        teacher_log_prob = data.batch["teacher_log_prob"]
-        teacher_ids_log_probs=data.batch["teacher_ids_log_probs"]
-        entropys = data.batch["entropys"]
-        from .mix_core_alg import compute_tipo_neg_advantage
-        advantages, returns = compute_tipo_neg_advantage(
-            token_level_rewards=token_level_rewards,
-            entropys=entropys,
-            eos_mask=response_mask,
-            index=index,
-            use_std=grpo_use_std,
-            teacher_predict_ids=teacher_predict_ids,
-            student_predict_ids=responses,
-            teacher_ids_log_probs=teacher_ids_log_probs
-        )
-        data.batch["advantages"] = advantages
-        data.batch["returns"] = returns
-    elif adv_estimator == "tipo_top20ptok":
-        token_level_rewards = data.batch['token_level_rewards']
-        index = data.non_tensor_batch['uid']
-        responses = data.batch['responses']
-        response_length = responses.size(-1)
-        attention_mask = data.batch['attention_mask']
-        response_mask = attention_mask[:, -response_length:]
-        teacher_predict_ids = data.batch["teacher_predict_ids"]
-        teacher_log_prob = data.batch["teacher_log_prob"]
-        teacher_ids_log_probs=data.batch["teacher_ids_log_probs"]
-        entropys = data.batch["entropys"]
-        teacher_coef = data.meta_info["teacher_coef"]
-        from .mix_core_alg import compute_tipo_top20ptok_advantage
-        advantages, returns = compute_tipo_top20ptok_advantage(
-            token_level_rewards=token_level_rewards,
-            entropys=entropys,
-            eos_mask=response_mask,
-            index=index,
-            use_std=grpo_use_std,
-            teacher_predict_ids=teacher_predict_ids,
-            student_predict_ids=responses,
-            teacher_ids_log_probs=teacher_ids_log_probs,
-            teacher_coef=teacher_coef
-        )
-        data.batch["advantages"] = advantages
-        data.batch["returns"] = returns
     elif adv_estimator == 'grpo_split':
         token_level_rewards = data.batch['token_level_rewards']
         index = data.non_tensor_batch['uid']
@@ -509,17 +383,7 @@ class MIXRayPPOTrainer(RayPPOTrainer):
             self.use_critic = False
         elif self.config.algorithm.adv_estimator == 'tipo':
             self.use_critic = False
-        elif self.config.algorithm.adv_estimator == 'tipo_mix':
-            self.use_critic = False
-        elif self.config.algorithm.adv_estimator == 'tipo_high':
-            self.use_critic = False
-        elif self.config.algorithm.adv_estimator == 'tipo_high_both':
-            self.use_critic = False
         elif self.config.algorithm.adv_estimator == 'opsft':
-            self.use_critic = False
-        elif self.config.algorithm.adv_estimator == 'tipo_neg':
-            self.use_critic = False
-        elif self.config.algorithm.adv_estimator == 'tipo_top20ptok':
             self.use_critic = False
         else:
             raise NotImplementedError
@@ -747,6 +611,25 @@ class MIXRayPPOTrainer(RayPPOTrainer):
                         old_log_prob_metrics = {"actor/entropy": entropy_agg.detach().item()}
                         metrics.update(old_log_prob_metrics)
                         batch = batch.union(old_log_prob)
+
+                    # ===== Exp2 Policy-Gap probe (方法无关, 每步都记; step-1 的值=Policy Gap Curve 的 x 轴) =====
+                    # teacher worker 两条分支都恒返回 teacher_log_prob / teacher_predict_ids, 故 KDRL/RKL/TGPO 同口径。
+                    if self.use_teacher_reference_policy and 'teacher_log_prob' in batch.batch.keys():
+                        with torch.no_grad():
+                            _gap_mask = response_mask.float()
+                            _gap_tok = _gap_mask.sum().clamp(min=1.0)
+                            _stu_lp = batch.batch['old_log_probs']
+                            _tea_lp = batch.batch['teacher_log_prob']
+                            # 单样本 k1 反向 KL: E_{y~pi_theta}[log pi_theta - log pi_T]
+                            _rev_kl_k1 = (((_stu_lp - _tea_lp) * _gap_mask).sum() / _gap_tok).detach().item()
+                            # teacher argmax 与 student 采样 token 的逐 token 不一致率 (ρ>1 代理)
+                            _mismatch = (((batch.batch['teacher_predict_ids'] != batch.batch['responses']).float()
+                                          * _gap_mask).sum() / _gap_tok).detach().item()
+                            metrics['gap/reverse_kl_k1'] = _rev_kl_k1
+                            metrics['gap/mismatch_ratio'] = _mismatch
+                            if self.global_steps <= 1:
+                                print(f"[EXP2-GAP] step={self.global_steps} "
+                                      f"reverse_kl_k1={_rev_kl_k1:.4f} mismatch_ratio={_mismatch:.4f}")
 
                     with _timer('adv', timing_raw):
                         # compute scores using reward model and/or reward function

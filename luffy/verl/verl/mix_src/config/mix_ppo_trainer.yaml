@@ -92,7 +92,10 @@ actor_rollout_ref:
     use_sft_multitask_loss: False
     use_tipo_loss: False
     use_tipo_topk_kl: False
+    tipo_kl_direction: forward   # forward = TGPO(CE/前向引导); reverse = 分布级 reverse KL(§2 RKL-Reg 对照)
+    tipo_reg_only: False         # True = 目标只留 teacher 正则项, 丢 GRPO pg_loss(§2 纯 RKL)
     use_kdrl_loss: False
+    use_rkl_reg_loss: False
 
   ref:
     fsdp_config:

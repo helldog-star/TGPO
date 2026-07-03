@@ -19,10 +19,10 @@ export NO_PROXY="127.0.0.1,localhost"
 # Set XFormers backend to avoid CUDA errors
 export VLLM_ATTENTION_BACKEND=XFORMERS
 
-export MODEL_PATH=/mnt/dolphinfs/ssd_pool/docker/user/hadoop-nlp-sh02/hadoop-aipnlp/FMG/liuxinyu67/models/Qwen2.5-Math-7B-aligned
-export TEACHER_MODEL_PATH=/mnt/dolphinfs/ssd_pool/docker/user/hadoop-nlp-sh02/hadoop-aipnlp/FMG/liuxinyu67/models/Qwen3-30B-A3B-Thinking-2507-aligned
+export MODEL_PATH=${MODEL_PATH:-/mnt/dolphinfs/ssd_pool/docker/user/hadoop-nlp-sh02/hadoop-aipnlp/FMG/liuxinyu67/models/Qwen2.5-Math-7B-aligned}
+export TEACHER_MODEL_PATH=${TEACHER_MODEL_PATH:-/mnt/dolphinfs/ssd_pool/docker/user/hadoop-nlp-sh02/hadoop-aipnlp/FMG/liuxinyu67/models/Qwen3-30B-A3B-Thinking-2507-aligned}
 export DATA_DIR=$ROOT/data/
-export EXP_NAME=rkl_qwen2d5_math_7b_a3b35k
+export EXP_NAME=${EXP_NAME:-rkl_qwen2d5_math_7b_a3b35k}
 
 export WANDB_PROJECT="tipo"
 export WANDB_MODE="offline"
@@ -102,4 +102,4 @@ python3 -m verl.mix_src.main_mix_ppo \
     trainer.max_optim_to_keep=2 \
     data.shuffle=True \
     trainer.default_hdfs_dir=null \
-    trainer.total_training_steps=300 "${@:1}" > >(tee $LOG_FILE) 2> >(tee ${LOG_FILE}.err >&2)
+    trainer.total_training_steps=${TRAIN_STEPS:-300} "${@:1}" > >(tee $LOG_FILE) 2> >(tee ${LOG_FILE}.err >&2)

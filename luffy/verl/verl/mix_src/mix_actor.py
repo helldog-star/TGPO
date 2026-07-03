@@ -83,6 +83,9 @@ class MIXDataParallelPPOActor(DataParallelPPOActor):
         if self.config.use_kdrl_loss:
             teacher_coef = data.meta_info["teacher_coef"]
             select_keys.append('teacher_log_prob')
+        if self.config.get('use_rkl_reg_loss', False):
+            teacher_coef = data.meta_info["teacher_coef"]
+            select_keys.append('teacher_log_prob')
 
         batch = data.select(batch_keys=select_keys).batch
 
@@ -235,7 +238,9 @@ class MIXDataParallelPPOActor(DataParallelPPOActor):
                                                                                             student_teacher_topk_log_probs=student_teacher_topk_log_probs,
                                                                                             cliprange=clip_ratio,
                                                                                             loss_remove_token_mean=self.config.loss_remove_token_mean,
-                                                                                            loss_remove_clip=self.config.loss_remove_clip)
+                                                                                            loss_remove_clip=self.config.loss_remove_clip,
+                                                                                            kl_direction=self.config.get('tipo_kl_direction', 'forward'),
+                                                                                            reg_only=self.config.get('tipo_reg_only', False))
                         data = {
                             'actor/lm_loss': lm_loss.detach().item(),
                             'actor/teacher_reg_loss': teacher_reg_loss.detach().item(),
@@ -247,6 +252,26 @@ class MIXDataParallelPPOActor(DataParallelPPOActor):
 
                         from .mix_core_alg import compute_token_on_kdrl_loss
                         loss_fn = compute_token_on_kdrl_loss
+                        teacher_log_prob = data['teacher_log_prob']
+                        pg_loss, lm_loss, teacher_reg_loss, pg_clipfrac, ppo_kl = loss_fn(old_log_prob=old_log_prob, log_prob=log_prob,
+                                                                                            advantages=advantages,
+                                                                                            eos_mask=response_mask,
+                                                                                            teacher_log_prob=teacher_log_prob,
+                                                                                            teacher_coef=teacher_coef,
+                                                                                            cliprange=clip_ratio,
+                                                                                            loss_remove_token_mean=self.config.loss_remove_token_mean,
+                                                                                            loss_remove_clip=self.config.loss_remove_clip)
+                        data = {
+                            'actor/lm_loss': lm_loss.detach().item(),
+                            'actor/teacher_reg_loss': teacher_reg_loss.detach().item(),
+                            'actor/teacher_coef': teacher_coef
+                        }
+                        append_to_dict(metrics, data)
+
+                    elif self.config.get('use_rkl_reg_loss', False):
+
+                        from .mix_core_alg import compute_token_on_rkl_reg_loss
+                        loss_fn = compute_token_on_rkl_reg_loss
                         teacher_log_prob = data['teacher_log_prob']
                         pg_loss, lm_loss, teacher_reg_loss, pg_clipfrac, ppo_kl = loss_fn(old_log_prob=old_log_prob, log_prob=log_prob,
                                                                                             advantages=advantages,
