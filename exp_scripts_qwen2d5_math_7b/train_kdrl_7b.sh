@@ -24,7 +24,7 @@ export TEACHER_MODEL_PATH=${TEACHER_MODEL_PATH:-/mnt/dolphinfs/ssd_pool/docker/u
 export DATA_DIR=$ROOT/data/
 export EXP_NAME=${EXP_NAME:-kdrl_qwen2d5_math_7b_a3b35k}
 
-export WANDB_PROJECT="tipo"
+export WANDB_PROJECT="tgpo"
 export WANDB_MODE="offline"
 export WANDB_API_KEY="b6d66b4632451b4d1908d9286fdafc46553519a7"
 export WANDB_DIR=$ROOT/checkpoints_main/$EXP_NAME/wandb

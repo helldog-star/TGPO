@@ -74,12 +74,14 @@ class MIXDataParallelPPOActor(DataParallelPPOActor):
             select_keys.append('on_logprobs_std')
         if self.config.use_off_policy_loss and self.config.use_off_policy_probs:
             select_keys.append('target_probs')
-        if self.config.use_tipo_loss:
+        if self.config.use_tgpo_loss:
             teacher_coef = data.meta_info["teacher_coef"]
             select_keys.append('teacher_predict_ids')
-            if self.config.get('use_tipo_topk_kl', False):
+            if self.config.get('use_tgpo_topk_kl', False):
                 select_keys.append('teacher_topk_ids')
                 select_keys.append('teacher_topk_logits')
+            if self.config.get('tgpo_kl_direction', 'forward') in ('reverse_k2', 'reverse_k3'):
+                select_keys.append('teacher_log_prob')
         if self.config.use_kdrl_loss:
             teacher_coef = data.meta_info["teacher_coef"]
             select_keys.append('teacher_log_prob')
@@ -122,12 +124,12 @@ class MIXDataParallelPPOActor(DataParallelPPOActor):
                     clip_ratio = self.config.clip_ratio
                     entropy_coeff = self.config.entropy_coeff
 
-                    if self.config.use_tipo_loss:
+                    if self.config.use_tgpo_loss:
                         student_teacher_topk_log_probs = None
                         teacher_topk_logits = None
-                        use_tipo_topk_kl = self.config.get('use_tipo_topk_kl', False) and \
+                        use_tgpo_topk_kl = self.config.get('use_tgpo_topk_kl', False) and \
                             ('teacher_topk_ids' in data) and ('teacher_topk_logits' in data)
-                        if use_tipo_topk_kl:
+                        if use_tgpo_topk_kl:
                             entropy, log_prob, teacher_ids_log_probs, student_teacher_topk_log_probs = \
                                 self._forward_teacher_ids_micro_batch(
                                     micro_batch=data,
@@ -225,10 +227,11 @@ class MIXDataParallelPPOActor(DataParallelPPOActor):
                             data['actor/off_ratio_min_clip_frac'] = ret_dict['off_ratio_min_clip_frac'].detach().item()
                         append_to_dict(metrics, data)
 
-                    elif self.config.use_tipo_loss:
+                    elif self.config.use_tgpo_loss:
 
-                        from .mix_core_alg import compute_token_on_tipo_loss
-                        loss_fn = compute_token_on_tipo_loss
+                        from .mix_core_alg import compute_token_on_tgpo_loss
+                        loss_fn = compute_token_on_tgpo_loss
+                        teacher_log_prob_for_kl = data['teacher_log_prob'] if 'teacher_log_prob' in data else None
                         pg_loss, lm_loss, teacher_reg_loss, pg_clipfrac, ppo_kl = loss_fn(old_log_prob=old_log_prob, log_prob=log_prob,
                                                                                             advantages=advantages,
                                                                                             eos_mask=response_mask,
@@ -236,11 +239,12 @@ class MIXDataParallelPPOActor(DataParallelPPOActor):
                                                                                             teacher_coef=teacher_coef,
                                                                                             teacher_topk_logits=teacher_topk_logits,
                                                                                             student_teacher_topk_log_probs=student_teacher_topk_log_probs,
+                                                                                            teacher_log_prob=teacher_log_prob_for_kl,
                                                                                             cliprange=clip_ratio,
                                                                                             loss_remove_token_mean=self.config.loss_remove_token_mean,
                                                                                             loss_remove_clip=self.config.loss_remove_clip,
-                                                                                            kl_direction=self.config.get('tipo_kl_direction', 'forward'),
-                                                                                            reg_only=self.config.get('tipo_reg_only', False))
+                                                                                            kl_direction=self.config.get('tgpo_kl_direction', 'forward'),
+                                                                                            reg_only=self.config.get('tgpo_reg_only', False))
                         data = {
                             'actor/lm_loss': lm_loss.detach().item(),
                             'actor/teacher_reg_loss': teacher_reg_loss.detach().item(),
@@ -689,73 +693,6 @@ class MIXDataParallelPPOActor(DataParallelPPOActor):
                 entropys = entropys[revert_indices]
 
         return log_probs, entropys
-
-    
-    def compute_teacher_ids_log_prob(self, data: DataProto, calculate_entropy=False) -> torch.Tensor:
-        """Compute the log probability of the responses given input_ids, attention_mask and position_ids
-
-        Args:
-            data (DataProto): a DataProto containing keys
-
-                ``input_ids``: tensor of shape [batch_size, sequence_length]. torch.int64. Note that input_ids is the
-                concatenation of prompt and response. Note that ``sequence_length = prompt_length + response_length``.
-
-                ``attention_mask``: tensor of shape [batch_size, sequence_length]. torch.int64.
-
-                ``position_ids``: tensor of shape [batch_size, sequence_length]. torch.int64.
-
-                ``responses``:  tensor of shape [batch_size, response_length]. torch.int64.
-
-        Returns:
-            torch.Tensor: the log_prob tensor
-        """
-        # set to eval
-        self.actor_module.eval()
-
-        micro_batch_size = data.meta_info['micro_batch_size']
-        temperature = data.meta_info['temperature']  # temperature must be in the data.meta_info to avoid slient error
-        use_dynamic_bsz = data.meta_info['use_dynamic_bsz']
-
-        select_keys = ['responses', 'input_ids', 'attention_mask', 'position_ids', 'teacher_predict_ids']
-        batch = data.select(batch_keys=select_keys).batch
-
-        if use_dynamic_bsz:
-            # split using dynamic bsz
-            max_token_len = data.meta_info['max_token_len'] * self.ulysses_sequence_parallel_size
-            micro_batches, indices = rearrange_micro_batches(batch=batch, max_token_len=max_token_len)
-        else:
-            micro_batches = batch.split(micro_batch_size)
-
-        log_probs_lst = []
-        entropy_lst = []
-        teacher_ids_log_probs_lst = []
-        for micro_batch in micro_batches:
-            with torch.no_grad():
-                # entropy, log_probs = self._forward_micro_batch(micro_batch, temperature=temperature)
-                entropy, log_probs, teacher_ids_log_probs = self._forward_teacher_ids_micro_batch(
-                    micro_batch, temperature=temperature
-                )
-            log_probs_lst.append(log_probs)
-            teacher_ids_log_probs_lst.append(teacher_ids_log_probs)
-            if calculate_entropy:
-                entropy_lst.append(entropy)
-
-        log_probs = torch.concat(log_probs_lst, dim=0)
-        teacher_ids_log_probs = torch.concat(teacher_ids_log_probs_lst, dim=0)
-        entropys = None
-        if calculate_entropy:
-            entropys = torch.concat(entropy_lst, dim=0)
-
-        if use_dynamic_bsz:
-            indices = list(itertools.chain.from_iterable(indices))
-            assert len(indices) == log_probs.size(0), f"{len(indices)} vs. {log_probs.size()}"
-            revert_indices = torch.tensor(get_reverse_idx(indices), dtype=torch.long)
-            log_probs = log_probs[revert_indices]
-            teacher_ids_log_probs = teacher_ids_log_probs[revert_indices]
-            if calculate_entropy:
-                entropys = entropys[revert_indices]
-
-        return log_probs, entropys, teacher_ids_log_probs
 
 
     def _forward_teacher_ids_micro_batch(

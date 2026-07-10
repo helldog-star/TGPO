@@ -252,7 +252,7 @@ def compute_token_on_off_policy_loss(
     }
 
 # tgpo
-def compute_token_on_tipo_loss(
+def compute_token_on_tgpo_loss(
     old_log_prob: torch.Tensor,
     log_prob: torch.Tensor,
     advantages: torch.Tensor,
@@ -262,6 +262,7 @@ def compute_token_on_tipo_loss(
     teacher_coef: float = 0.1,
     teacher_topk_logits: torch.Tensor | None = None,
     student_teacher_topk_log_probs: torch.Tensor | None = None,
+    teacher_log_prob: torch.Tensor | None = None,
     loss_remove_clip: bool = False,
     loss_remove_token_mean: bool = False,
     kl_direction: str = "forward",
@@ -278,10 +279,14 @@ def compute_token_on_tipo_loss(
         teacher_ids_log_probs: (bs, response_length) - student对teacher预测token的log概率
         cliprange: PPO裁剪范围
         teacher_coef: 正则化系数 λ / w
-        kl_direction: "forward" = TGPO 的 forward KL / CE 引导 (默认);
-                      "reverse" = 分布级 reverse KL D_KL(π_θ||π_T) (在 teacher top-k 上,
-                      student 在该支撑上重归一化), 用作论文 §2 的 "RKL 进 regularization" 对照。
-                      reverse 要求 teacher_topk_logits 与 student_teacher_topk_log_probs 非空。
+        kl_direction: teacher 正则项的形态, 均为 pathwise (A) 可微 loss, 不进 advantage / 不乘 ratio:
+                      "forward"     = TGPO 的 forward KL / CE 引导 (默认, 落 teacher token);
+                      "reverse"     = 分布级 reverse KL D_KL(π_θ||π_T) (teacher top-k 上, student
+                                      在该支撑重归一化)。要 teacher_topk_logits + student_teacher_topk_log_probs。
+                      "reverse_k2"  = 逐点 Schulman K2: ½·logρ²      (低方差、有偏)。要 teacher_log_prob。
+                      "reverse_k3"  = 逐点 Schulman K3: exp(-logρ)-1+logρ (reverse-KL 无偏且恒≥0)。要 teacher_log_prob。
+                      其中 logρ_t = logπ_θ(a_t) - logπ_T(a_t) 在 on-policy 采样 token a_t 处, 梯度只穿 log_prob。
+        teacher_log_prob: (bs, response_length) teacher 对 student 采样 token 的 log_prob (reverse_k2/k3 用)。
         reg_only: True 时目标只保留 teacher 正则项, 丢掉 GRPO 的 pg_loss
                   (用于 §2 纯 RKL: 不掺 RLVR 结果奖励)。
 
@@ -311,7 +316,7 @@ def compute_token_on_tipo_loss(
         # 分布级 reverse KL: D_KL(π_θ || π_T) = Σ_v π_θ(v)[logπ_θ(v) - logπ_T(v)], 在 teacher top-k 上。
         # 解析可微 (梯度穿过 student 的 softmax 权重 π_θ(v)), 不走 REINFORCE, 无采样方差, 无 “+1”。
         assert teacher_topk_logits is not None and student_teacher_topk_log_probs is not None, \
-            "kl_direction='reverse' 需要 teacher_topk_logits 与 student_teacher_topk_log_probs (请开 use_tipo_topk_kl)"
+            "kl_direction='reverse' 需要 teacher_topk_logits 与 student_teacher_topk_log_probs (请开 use_tgpo_topk_kl)"
         teacher_log_probs_topk = torch.log_softmax(teacher_topk_logits.float(), dim=-1)  # teacher 在其 top-k 上的分布 (detach)
         # student_teacher_topk_log_probs 是 student 全词表 log-softmax 在 teacher top-k id 上的取值,
         # reverse KL 需 student 在该 top-k 支撑上的(可微)归一化分布:
@@ -326,6 +331,23 @@ def compute_token_on_tipo_loss(
             teacher_reg_loss = (rev_kl_token * eos_mask).sum() / eos_mask.shape[-1]
         else:
             teacher_reg_loss = verl_F.masked_mean(rev_kl_token, eos_mask)
+    elif kl_direction in ("reverse_k2", "reverse_k3"):
+        # 逐点(采样 token 处) reverse-KL 估计量, 作为可微正则项。
+        # logρ_t = logπ_θ(a_t) - logπ_T(a_t), a_t ~ π_θ (on-policy); 梯度只穿当前 log_prob(teacher detach)。
+        # k2 = ½logρ²                (Schulman K2, 低方差有偏)
+        # k3 = exp(-logρ) - 1 + logρ (Schulman K3, 对 reverse KL 无偏且恒≥0; r=π_T/π_θ=exp(-logρ))
+        # 二者皆 pathwise (A): 不进 advantage、不乘 ratio, 不保留策略采样梯度 (B)。
+        assert teacher_log_prob is not None, \
+            "kl_direction='reverse_k2/k3' 需要 teacher_log_prob (teacher 对 student 采样 token 的 log_prob)"
+        log_ratio = log_prob - teacher_log_prob.detach()
+        if kl_direction == "reverse_k2":
+            rkl_token = 0.5 * log_ratio.pow(2)
+        else:  # reverse_k3
+            rkl_token = torch.exp(-log_ratio) - 1.0 + log_ratio
+        if loss_remove_token_mean is True:
+            teacher_reg_loss = (rkl_token * eos_mask).sum() / eos_mask.shape[-1]
+        else:
+            teacher_reg_loss = verl_F.masked_mean(rkl_token, eos_mask)
     else:
         # 默认 teacher 正则：student forcing teacher token 的 CE（硬标签, forward KL / 引导）。
         teacher_reg_loss = -verl_F.masked_mean(teacher_ids_log_probs, eos_mask)
@@ -427,7 +449,7 @@ def compute_token_on_rkl_reg_loss(
     注意: teacher_reg_loss 的“数值”无 KL 含义(只是 surrogate), 仅其“梯度”= ∇(reverse KL)。
     与标准 RKL(OP Distill) 几乎同一估计量(后者把 logρ 当 advantage 走 -A·ratio); 区别仅在
     logρ 用 current_logp(此处)还是 old_logp(OP Distill) + 无 GRPO 组归一化/clip。
-    与分布级 RKL-Reg(tipo_loss kl_direction=reverse) 互为姊妹: 那个是全分布解析可微、无采样方差。
+    与分布级 RKL-Reg(tgpo_loss kl_direction=reverse) 互为姊妹: 那个是全分布解析可微、无采样方差。
     """
 
     # 以下 pg_loss / ppo_kl / pg_clipfrac 仅用于 wandb 诊断, 不进入梯度目标。
@@ -489,95 +511,6 @@ def compute_rkl_advantage(
     return scores, scores
 
 
-def compute_rkl_topk_advantage(
-    student_topk_ids: torch.Tensor,
-    student_topk_logits: torch.Tensor,
-    teacher_topk_ids: torch.Tensor,
-    teacher_topk_logits: torch.Tensor,
-    response_mask: torch.Tensor,
-    chunk_size: int = 8192,
-) -> tuple[torch.Tensor, torch.Tensor]:
-    """
-    Compute distribution-level top-k reverse KL approximation:
-      RKL_topk ~= KL(student || teacher) on intersect(topk_teacher, topk_student)
-    and return advantage = -RKL_topk.
-    """
-    bsz, response_length, _ = student_topk_ids.shape
-    t0 = time.perf_counter()
-    flat_scores = torch.zeros(
-        bsz * response_length,
-        dtype=student_topk_logits.dtype,
-        device=student_topk_logits.device,
-    )
-    valid_token_idx = torch.nonzero(response_mask.reshape(-1) > 0, as_tuple=False).squeeze(-1)
-    if valid_token_idx.numel() == 0:
-        scores = flat_scores.view(bsz, response_length) * response_mask
-        return scores, scores
-
-    flat_student_ids = student_topk_ids.reshape(bsz * response_length, -1)
-    flat_student_logits = student_topk_logits.reshape(bsz * response_length, -1)
-    flat_teacher_ids = teacher_topk_ids.reshape(bsz * response_length, -1)
-    flat_teacher_logits = teacher_topk_logits.reshape(bsz * response_length, -1)
-    total_pairs = 0
-    matched_pairs = 0
-    total_rows = 0
-    matched_rows = 0
-
-    for start in range(0, valid_token_idx.numel(), chunk_size):
-        idx = valid_token_idx[start:start + chunk_size]
-        student_ids = flat_student_ids[idx].long()
-        student_logits = flat_student_logits[idx].float()
-        teacher_ids = flat_teacher_ids[idx].long()
-        teacher_logits = flat_teacher_logits[idx].float()
-        chunk_scores = torch.zeros(student_ids.size(0), dtype=student_logits.dtype, device=student_logits.device)
-
-        # Faster than materializing [chunk, k, k] boolean match tensor:
-        # sort student ids then locate teacher ids by batched binary search.
-        k_student = student_ids.size(1)
-        student_sorted_ids, student_sort_idx = torch.sort(student_ids, dim=1)
-        student_sorted_logits = torch.gather(student_logits, dim=1, index=student_sort_idx)
-
-        search_pos = torch.searchsorted(student_sorted_ids, teacher_ids, right=False)
-        in_bound = search_pos < k_student
-        safe_pos = search_pos.clamp(max=k_student - 1)
-        matched_student_ids = torch.gather(student_sorted_ids, dim=1, index=safe_pos)
-        has_match = in_bound & (matched_student_ids == teacher_ids)
-        row_has_common = has_match.any(dim=1)
-        matched_pairs += int(has_match.sum().item())
-        total_pairs += int(has_match.numel())
-        matched_rows += int(row_has_common.sum().item())
-        total_rows += int(row_has_common.numel())
-        if row_has_common.any():
-            aligned_student_logits = torch.gather(student_sorted_logits, dim=1, index=safe_pos)
-
-            neg_inf = torch.finfo(student_logits.dtype).min
-            teacher_common_logits = teacher_logits.masked_fill(~has_match, neg_inf)
-            student_common_logits = aligned_student_logits.masked_fill(~has_match, neg_inf)
-
-            teacher_common_logits = teacher_common_logits[row_has_common]
-            student_common_logits = student_common_logits[row_has_common]
-
-            teacher_logp = teacher_common_logits - torch.logsumexp(teacher_common_logits, dim=1, keepdim=True)
-            student_logp = student_common_logits - torch.logsumexp(student_common_logits, dim=1, keepdim=True)
-            student_prob = torch.exp(student_logp)
-            rkl = (student_prob * (student_logp - teacher_logp)).sum(dim=1)
-            # advantage = -RKL so that maximizing advantage minimizes RKL.
-            chunk_scores[row_has_common] = -rkl
-
-        flat_scores[idx] = chunk_scores.to(flat_scores.dtype)
-
-    scores = flat_scores.view(bsz, response_length) * response_mask
-    elapsed_ms = (time.perf_counter() - t0) * 1000.0
-    pair_coverage = matched_pairs / max(total_pairs, 1)
-    row_coverage = matched_rows / max(total_rows, 1)
-    print(
-        f"[rkl_topk] time_ms={elapsed_ms:.1f} "
-        f"pair_coverage={pair_coverage:.3f} "
-        f"token_coverage={row_coverage:.3f} "
-        f"valid_tokens={int(valid_token_idx.numel())} chunk_size={chunk_size}"
-    )
-    return scores, scores
-
 # 所有tok grpo adv + teacher rkl [👎]
 def compute_grpo_merge_rkl_advantage(token_level_rewards: torch.Tensor,
                                     eos_mask: torch.Tensor,
@@ -635,138 +568,3 @@ def compute_grpo_merge_rkl_advantage(token_level_rewards: torch.Tensor,
 
     return scores, scores
 
-# 所有tok grpo adv + stuforce teacher ce
-def compute_tipo_advantage(token_level_rewards: torch.Tensor,
-                            entropys: torch.Tensor,
-                            eos_mask: torch.Tensor,
-                            index: torch.Tensor,
-                            teacher_predict_ids: torch.Tensor,
-                            student_predict_ids: torch.Tensor,
-                            teacher_ids_log_probs: torch.Tensor,  # (bs, seq_len)
-                            epsilon: float = 1e-6,
-                            teacher_coef: float = 0.002,
-                            use_std: bool = True):
-    
-    response_length = token_level_rewards.shape[-1]
-    non_zero_mask = (token_level_rewards != 0)
-    # 1. 保存原始分数的统计信息 (Raw Score Stats)
-    raw_scores = (token_level_rewards * non_zero_mask).sum(dim=-1)
-    raw_score_mean = raw_scores.mean().item()
-    
-    scores = raw_scores.clone() # 复制一份用于归一化计算
-
-    id2score = defaultdict(list)
-    id2mean = {}
-    id2std = {}
-
-    with torch.no_grad():
-        bsz = scores.shape[0]
-        for i in range(bsz):
-            id2score[index[i]].append(scores[i])
-        for idx in id2score:
-            if len(id2score[idx]) == 1:
-                id2mean[idx] = torch.tensor(0.0)
-                id2std[idx] = torch.tensor(1.0)
-            elif len(id2score[idx]) > 1:
-                id2mean[idx] = torch.mean(torch.tensor(id2score[idx]))
-                id2std[idx] = torch.std(torch.tensor([id2score[idx]]))
-            else:
-                raise ValueError(f"no score in prompt index: {idx}")
-        
-        for i in range(bsz):
-            if use_std:
-                scores[i] = (scores[i] - id2mean[index[i]]) / (id2std[index[i]] + epsilon)
-            else:
-                scores[i] = (scores[i] - id2mean[index[i]])
-        
-        # 扩展到序列长度
-        scores = scores.unsqueeze(-1).tile([1, response_length]) * eos_mask
-
-        # ===== 统计信息计算 =====
-        valid_all_entropys = entropys[eos_mask.bool()]
-        avg_all_entropy = valid_all_entropys.mean().item() if valid_all_entropys.numel() > 0 else 0.0
-        total_valid_tokens = eos_mask.sum() + epsilon
-        
-        # 1. Mismatch Ratio
-        is_diff = (teacher_predict_ids != student_predict_ids).float() * eos_mask
-        mismatch_ratio = is_diff.sum() / total_valid_tokens
-
-        # ===== 计算 Teacher Signal =====
-        teacher_signal = torch.exp(teacher_ids_log_probs) 
-        weighted_teacher_signal = teacher_coef * teacher_signal
-
-        # 2. 信号强度对比
-        # 计算 Outcome Reward 的平均绝对值强度 (只看有效token)
-        outcome_magnitude = scores[eos_mask.bool()].abs().mean().item()
-        # 计算 Weighted Teacher Signal 的平均绝对值强度
-        teacher_magnitude = weighted_teacher_signal[eos_mask.bool()].abs().mean().item()
-        
-        # 3. Teacher Probability 未加权均值，代表模型认为 Teacher Token 是对的概率有多大
-        avg_teacher_prob = teacher_signal[eos_mask.bool()].mean().item()
-
-        # Raw_S: 原始分数均值 (监控做题能力)
-        # T_Prob: 模型预测Teacher Token的平均概率 (监控模仿能力)
-        # Mag_Out/Mag_T: 两种奖励信号的强度对比 (监控权重平衡)
-        print(f"[TIPO] Raw_S: {raw_score_mean:.2f} | Ent: {avg_all_entropy:.3f} | Diff: {mismatch_ratio:.1%} | "
-              f"T_Prob: {avg_teacher_prob:.3f} | "
-              f"Mag(Out/Tea): {outcome_magnitude:.3f}/{teacher_magnitude:.3f}")
-
-        scores = scores + weighted_teacher_signal
-
-    return scores, scores
-
-# 所有tok均仅采用student forcing teacher ce [👎]
-def compute_opsft_advantage(entropys: torch.Tensor,
-                        eos_mask: torch.Tensor,
-                        teacher_predict_ids: torch.Tensor,
-                        student_predict_ids: torch.Tensor,
-                        teacher_ids_log_probs: torch.Tensor,  # (bs, seq_len)
-                        epsilon: float = 1e-6):
-    """
-    Compute advantage for GRPO, operating only on Outcome reward 
-    (with only one scalar reward for each response).
-    Args:
-        token_level_rewards: `(torch.Tensor)`
-            shape: (bs, response_length)
-        eos_mask: `(torch.Tensor)`
-            shape: (bs, response_length)
-    
-    Returns:
-        advantages: `(torch.Tensor)`
-            shape: (bs, response_length)
-        Returns: `(torch.Tensor)`
-            shape: (bs, response_length)
-    """
-
-    with torch.no_grad():
-        
-        # 计算 CE Loss (Loss通常为正数: -log_probs)
-        ce_loss = -teacher_ids_log_probs 
-
-        # ===== 统计信息打印 (Statistics Logging) =====
-        valid_all_entropys = entropys[eos_mask.bool()]
-        avg_all_entropy = valid_all_entropys.mean().item() if valid_all_entropys.numel() > 0 else 0.0
-
-        total_valid_tokens = eos_mask.sum() + epsilon
-        
-        # Teacher/Student 不一致比例 (Mismatch Ratio)
-        is_diff = (teacher_predict_ids != student_predict_ids).float() * eos_mask
-        mismatch_ratio = is_diff.sum() / total_valid_tokens
-        
-        # 不一致位置的熵统计 (Diff Ent)
-        diff_entropys = entropys[is_diff.bool()]
-        if diff_entropys.numel() > 0:
-            diff_ent_min = diff_entropys.min().item()
-            diff_ent_mean = diff_entropys.mean().item()
-            diff_ent_max = diff_entropys.max().item()
-        else:
-            diff_ent_min = diff_ent_mean = diff_ent_max = 0.0
-
-        # 打印请求的信息
-        print(f"[TIPO-Entro] Ent_Mean: {avg_all_entropy:.4f} | Diff_Ratio: {mismatch_ratio:.1%} | Diff_Ent(Min/Avg/Max): {diff_ent_min:.3f}/{diff_ent_mean:.3f}/{diff_ent_max:.3f}")
-
-        # ===== 仅采用teacher监督 =====
-        teacher_signal = -ce_loss
-        scores = teacher_signal
-
-    return scores, scores

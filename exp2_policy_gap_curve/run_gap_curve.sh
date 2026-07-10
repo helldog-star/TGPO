@@ -1,7 +1,7 @@
 #!/bin/bash
 # 实验② Policy Gap Curve 扫描 driver
 # 复用 3 个 baseline 脚本(已改为 env 可覆盖 TEACHER_MODEL_PATH/EXP_NAME/MODEL_PATH)，
-# 在 teacher 阶梯 × {OPD(rkl), KDRL, TGPO(tipo_reg)} 上逐一起 run。
+# 在 teacher 阶梯 × {OPD(rkl), KDRL, TGPO(tgpo_reg)} 上逐一起 run。
 # 单节点顺序执行；要并行就把内层循环拆到多节点各跑一行。
 set -u
 
@@ -27,12 +27,12 @@ TEACHERS=(
 declare -A METHOD_SCRIPT=(
   [rkl]="$SCRIPT_DIR/train_rkl_7b.sh"
   [kdrl]="$SCRIPT_DIR/train_kdrl_7b.sh"
-  [tipo_reg]="$SCRIPT_DIR/train_tipo_reg_7b.sh"
+  [tgpo_reg]="$SCRIPT_DIR/train_tgpo_reg_7b.sh"
 )
 declare -A METHOD_STEPS=(
   [rkl]=150
   [kdrl]=150
-  [tipo_reg]=300
+  [tgpo_reg]=300
 )
 
 for entry in "${TEACHERS[@]}"; do
@@ -42,7 +42,7 @@ for entry in "${TEACHERS[@]}"; do
     echo "[WARN] teacher 路径不存在, 跳过: $tpath" >&2
     continue
   fi
-  for method in rkl kdrl tipo_reg; do
+  for method in rkl kdrl tgpo_reg; do
     script="${METHOD_SCRIPT[$method]}"
     steps="${METHOD_STEPS[$method]}"
     exp="exp2_${method}_${ttag}_7b"

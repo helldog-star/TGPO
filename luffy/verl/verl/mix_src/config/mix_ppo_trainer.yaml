@@ -90,10 +90,10 @@ actor_rollout_ref:
     loss_remove_clip: False
     sft_loss_coef: 1.0
     use_sft_multitask_loss: False
-    use_tipo_loss: False
-    use_tipo_topk_kl: False
-    tipo_kl_direction: forward   # forward = TGPO(CE/前向引导); reverse = 分布级 reverse KL(§2 RKL-Reg 对照)
-    tipo_reg_only: False         # True = 目标只留 teacher 正则项, 丢 GRPO pg_loss(§2 纯 RKL)
+    use_tgpo_loss: False
+    use_tgpo_topk_kl: False
+    tgpo_kl_direction: forward   # forward = TGPO(CE/前向引导); reverse = 分布级 reverse KL(§2 RKL-Reg 对照)
+    tgpo_reg_only: False         # True = 目标只留 teacher 正则项, 丢 GRPO pg_loss(§2 纯 RKL)
     use_kdrl_loss: False
     use_rkl_reg_loss: False
 
@@ -230,6 +230,7 @@ algorithm:
     kl_coef: 0.001
   grpo_use_std: True
   surprisal_base: 0.0
+  topk_k: 100                  # top-k KL(前向/反向共用)的 k, 供 use_tgpo_topk_kl / rkl_topk 使用
 
 trainer:
   rejection_sample: False # Reject sample prompts that all succeed or all fail (0 signal for GRPO due to normalization).

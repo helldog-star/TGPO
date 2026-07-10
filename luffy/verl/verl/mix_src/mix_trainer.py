@@ -165,44 +165,6 @@ def compute_advantage(data: DataProto, adv_estimator, gamma=1.0, lam=1.0, grpo_u
         )
         data.batch["advantages"] = advantages
         data.batch["returns"] = returns
-    elif adv_estimator == "rkl_topk":
-        responses = data.batch['responses']
-        response_length = responses.size(-1)
-        attention_mask = data.batch['attention_mask']
-        response_mask = attention_mask[:, -response_length:]
-        student_topk_ids = data.batch["student_topk_ids"]
-        student_topk_logits = data.batch["student_topk_logits"]
-        teacher_topk_ids = data.batch["teacher_topk_ids"]
-        teacher_topk_logits = data.batch["teacher_topk_logits"]
-        from .mix_core_alg import compute_rkl_topk_advantage
-        advantages, returns = compute_rkl_topk_advantage(
-            student_topk_ids=student_topk_ids,
-            student_topk_logits=student_topk_logits,
-            teacher_topk_ids=teacher_topk_ids,
-            teacher_topk_logits=teacher_topk_logits,
-            response_mask=response_mask,
-        )
-        data.batch["advantages"] = advantages
-        data.batch["returns"] = returns
-    elif adv_estimator == "opsft":
-        responses = data.batch['responses']
-        response_length = responses.size(-1)
-        attention_mask = data.batch['attention_mask']
-        response_mask = attention_mask[:, -response_length:]
-        teacher_predict_ids = data.batch["teacher_predict_ids"]
-        teacher_log_prob = data.batch["teacher_log_prob"] # teacher对student预测token的log_prob
-        teacher_ids_log_probs=data.batch["teacher_ids_log_probs"] # student对，teacher采用student forcing方法预测的token，的log_prob
-        entropys = data.batch["entropys"]
-        from .mix_core_alg import compute_opsft_advantage
-        advantages, returns = compute_opsft_advantage(
-            entropys=entropys,
-            eos_mask=response_mask,
-            teacher_predict_ids=teacher_predict_ids,
-            student_predict_ids=responses,
-            teacher_ids_log_probs=teacher_ids_log_probs
-        )
-        data.batch["advantages"] = advantages
-        data.batch["returns"] = returns
     elif adv_estimator == "grpo_merge_rkl":
         token_level_rewards = data.batch['token_level_rewards']
         index = data.non_tensor_batch['uid']
@@ -220,31 +182,6 @@ def compute_advantage(data: DataProto, adv_estimator, gamma=1.0, lam=1.0, grpo_u
             use_std=grpo_use_std,
             old_log_probs=old_log_probs,
             teacher_log_prob=teacher_log_prob
-        )
-        data.batch["advantages"] = advantages
-        data.batch["returns"] = returns
-    elif adv_estimator == "tipo":
-        token_level_rewards = data.batch['token_level_rewards']
-        index = data.non_tensor_batch['uid']
-        responses = data.batch['responses']
-        response_length = responses.size(-1)
-        attention_mask = data.batch['attention_mask']
-        response_mask = attention_mask[:, -response_length:]
-        teacher_predict_ids = data.batch["teacher_predict_ids"]
-        teacher_ids_log_probs=data.batch["teacher_ids_log_probs"]
-        entropys = data.batch["entropys"]
-        teacher_coef = data.meta_info["teacher_coef"]
-        from .mix_core_alg import compute_tipo_advantage
-        advantages, returns = compute_tipo_advantage(
-            token_level_rewards=token_level_rewards,
-            entropys=entropys,
-            eos_mask=response_mask,
-            index=index,
-            use_std=grpo_use_std,
-            teacher_predict_ids=teacher_predict_ids,
-            student_predict_ids=responses,
-            teacher_ids_log_probs=teacher_ids_log_probs,
-            teacher_coef = teacher_coef
         )
         data.batch["advantages"] = advantages
         data.batch["returns"] = returns
@@ -377,13 +314,7 @@ class MIXRayPPOTrainer(RayPPOTrainer):
             self.use_critic = False
         elif self.config.algorithm.adv_estimator == 'rkl':
             self.use_critic = False
-        elif self.config.algorithm.adv_estimator == 'rkl_topk':
-            self.use_critic = False
         elif self.config.algorithm.adv_estimator == 'grpo_merge_rkl':
-            self.use_critic = False
-        elif self.config.algorithm.adv_estimator == 'tipo':
-            self.use_critic = False
-        elif self.config.algorithm.adv_estimator == 'opsft':
             self.use_critic = False
         else:
             raise NotImplementedError
@@ -582,11 +513,12 @@ class MIXRayPPOTrainer(RayPPOTrainer):
                     if self.use_teacher_reference_policy:
                         with _timer("teacher_log_prob", timing_raw):
                             batch.meta_info['use_teacher'] = self.use_teacher_reference_policy  
-                            ##NOTE: 保存adv_estimator,use_tipo_loss信息用于控制compute_log_prob的计算过程
+                            ##NOTE: 保存adv_estimator,use_tgpo_loss信息用于控制compute_log_prob的计算过程
                             batch.meta_info['adv_estimator'] = self.config.algorithm.adv_estimator
-                            batch.meta_info['rkl_topk_k'] = int(self.config.algorithm.get('rkl_topk_k', 100))
-                            batch.meta_info['use_tipo_loss'] = self.config.actor_rollout_ref.actor.use_tipo_loss
-                            batch.meta_info['use_tipo_topk_kl'] = self.config.actor_rollout_ref.actor.get('use_tipo_topk_kl', False)
+                            # topk_k: top-k KL(前向/反向共用)的 k。
+                            batch.meta_info['topk_k'] = int(self.config.algorithm.topk_k)
+                            batch.meta_info['use_tgpo_loss'] = self.config.actor_rollout_ref.actor.use_tgpo_loss
+                            batch.meta_info['use_tgpo_topk_kl'] = self.config.actor_rollout_ref.actor.get('use_tgpo_topk_kl', False)
                             
                             teacher_log_prob = self.teacher_ref_policy_wg.compute_teacher_ref_log_prob(batch)
                             batch = batch.union(teacher_log_prob)

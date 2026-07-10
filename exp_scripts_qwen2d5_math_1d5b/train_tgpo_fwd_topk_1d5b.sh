@@ -11,7 +11,7 @@ which python
 ROOT=/mnt/dolphinfs/ssd_pool/docker/user/hadoop-nlp-sh02/hadoop-aipnlp/FMG/liuxinyu67/luffy
 export PYTHONPATH=$ROOT:$PYTHONPATH
 
-ray stop 
+ray stop
 
 export no_proxy="127.0.0.1,localhost"
 export NO_PROXY="127.0.0.1,localhost"
@@ -19,17 +19,30 @@ export NO_PROXY="127.0.0.1,localhost"
 # Set XFormers backend to avoid CUDA errors
 export VLLM_ATTENTION_BACKEND=XFORMERS
 
-export MODEL_PATH=${MODEL_PATH:-/mnt/dolphinfs/ssd_pool/docker/user/hadoop-nlp-sh02/hadoop-aipnlp/FMG/liuxinyu67/models/Qwen2.5-Math-7B-aligned}
-export TEACHER_MODEL_PATH=${TEACHER_MODEL_PATH:-/mnt/dolphinfs/ssd_pool/docker/user/hadoop-nlp-sh02/hadoop-aipnlp/FMG/liuxinyu67/models/Qwen3-30B-A3B-Thinking-2507-aligned}
+# ============================================================================
+# Soft-distribution 前向 KL (top-k) 蒸馏 + GRPO 奖励
+#   teacher_reg = D_KL(pi_T || pi_theta) 在 teacher top-k 支撑上 (前向 KL, 软标签)
+#   total_loss  = pg_loss(GRPO) + teacher_coef * fwd_kl   (tgpo_reg_only=False, 掺 RLVR 奖励)
+#
+# top-k 的 k 由环境变量 K 控制 (通过 algorithm.topk_k 传入, 默认 100)。
+# 三组实验示例:
+#   K=5   bash exp_scripts_qwen2d5_math_1d5b/train_tgpo_fwd_topk_1d5b.sh
+#   K=20  bash exp_scripts_qwen2d5_math_1d5b/train_tgpo_fwd_topk_1d5b.sh
+#   K=100 bash exp_scripts_qwen2d5_math_1d5b/train_tgpo_fwd_topk_1d5b.sh
+# ============================================================================
+K=${K:-100}
+
+export MODEL_PATH=/mnt/dolphinfs/ssd_pool/docker/user/hadoop-nlp-sh02/hadoop-aipnlp/FMG/liuxinyu67/models/Qwen2.5-Math-1.5B-aligned
+export TEACHER_MODEL_PATH=/mnt/dolphinfs/ssd_pool/docker/user/hadoop-nlp-sh02/hadoop-aipnlp/FMG/liuxinyu67/models/Qwen3-30B-A3B-Thinking-2507-aligned
 export DATA_DIR=$ROOT/data/
-export EXP_NAME=${EXP_NAME:-rkl_qwen2d5_math_7b_a3b35k}
+export EXP_NAME=tgpo_fwd_topk${K}_qwen2d5_math_1d5b_a3b35k
 
 export WANDB_PROJECT="tgpo"
 export WANDB_MODE="offline"
 export WANDB_API_KEY="b6d66b4632451b4d1908d9286fdafc46553519a7"
-export WANDB_DIR=$ROOT/checkpoints_main/$EXP_NAME/wandb
+export WANDB_DIR=$ROOT/checkpoints/$EXP_NAME/wandb
 mkdir -p $WANDB_DIR
-export PROJ_DIR=$ROOT/checkpoints_main/$EXP_NAME
+export PROJ_DIR=$ROOT/checkpoints/$EXP_NAME
 
 # 创建日志目录
 mkdir -p $PROJ_DIR/logs
@@ -39,7 +52,7 @@ cd $ROOT/luffy/verl/
 
 # Train over a single node, 8 A100-80GB GPUs.
 python3 -m verl.mix_src.main_mix_ppo \
-    algorithm.adv_estimator=rkl \
+    algorithm.adv_estimator=grpo \
     data.train_files=$DATA_DIR/openr1.a3b_correct_35k.parquet \
     data.val_files=$DATA_DIR/valid.parquet \
     data.train_batch_size=128 \
@@ -47,6 +60,9 @@ python3 -m verl.mix_src.main_mix_ppo \
     data.max_prompt_length=1024 \
     data.max_response_length=8192 \
     actor_rollout_ref.teacher_ref.enable=True \
+    actor_rollout_ref.teacher_ref.min_teacher_coef=0.0 \
+    actor_rollout_ref.teacher_ref.teacher_coef=0.002 \
+    actor_rollout_ref.teacher_ref.decay_rate=0.00001 \
     actor_rollout_ref.teacher_ref.model_path=$TEACHER_MODEL_PATH \
     actor_rollout_ref.teacher_ref.fsdp_config.param_offload=True \
     actor_rollout_ref.model.path=$MODEL_PATH \
@@ -94,6 +110,13 @@ python3 -m verl.mix_src.main_mix_ppo \
     actor_rollout_ref.rollout.prefix_reward_weight_alpha=1.0 \
     actor_rollout_ref.ref.use_ref=False \
     actor_rollout_ref.actor.use_off_policy_loss=False \
+    actor_rollout_ref.actor.use_kdrl_loss=False \
+    actor_rollout_ref.actor.use_rkl_reg_loss=False \
+    actor_rollout_ref.actor.use_tgpo_loss=True \
+    actor_rollout_ref.actor.use_tgpo_topk_kl=True \
+    actor_rollout_ref.actor.tgpo_kl_direction=forward \
+    actor_rollout_ref.actor.tgpo_reg_only=False \
+    algorithm.topk_k=$K \
     actor_rollout_ref.actor.off_policy_normalize=False \
     actor_rollout_ref.actor.off_policy_loss_impl=token \
     algorithm.grpo_use_std=True \
@@ -102,4 +125,4 @@ python3 -m verl.mix_src.main_mix_ppo \
     trainer.max_optim_to_keep=2 \
     data.shuffle=True \
     trainer.default_hdfs_dir=null \
-    trainer.total_training_steps=${TRAIN_STEPS:-300} "${@:1}" > >(tee $LOG_FILE) 2> >(tee ${LOG_FILE}.err >&2)
+    trainer.total_training_steps=300 "${@:1}" > >(tee $LOG_FILE) 2> >(tee ${LOG_FILE}.err >&2)

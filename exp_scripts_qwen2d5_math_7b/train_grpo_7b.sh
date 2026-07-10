@@ -23,7 +23,7 @@ export MODEL_PATH=/mnt/dolphinfs/ssd_pool/docker/user/hadoop-nlp-sh02/hadoop-aip
 export DATA_DIR=$ROOT/data/
 export EXP_NAME=grpo_qwen2d5_math_7b_a3b35k
 
-export WANDB_PROJECT="tipo"
+export WANDB_PROJECT="tgpo"
 export WANDB_MODE="offline"
 export WANDB_API_KEY="b6d66b4632451b4d1908d9286fdafc46553519a7"
 export WANDB_DIR=$ROOT/checkpoints_main/$EXP_NAME/wandb

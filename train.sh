@@ -7,7 +7,7 @@
 #   ./train.sh --algo grpo
 #   ./train.sh --algo luffy --exp-name luffy_7b_exp1
 #   ./train.sh --algo kdrl --teacher-model-path /path/to/teacher
-#   ./train.sh --algo tipo_adv data.train_batch_size=64  # 末尾可加任意 hydra 覆盖
+#   ./train.sh --algo tgpo_adv data.train_batch_size=64  # 末尾可加任意 hydra 覆盖
 #
 # 各 algo 的 hydra 差异化覆盖、EXP_NAME、需否 teacher 等见 config/tasks.sh
 #
@@ -69,7 +69,7 @@ fi
 setup_all_env
 ray stop
 
-export WANDB_PROJECT="tipo"
+export WANDB_PROJECT="tgpo"
 export WANDB_MODE="offline"
 export WANDB_API_KEY="b6d66b4632451b4d1908d9286fdafc46553519a7"
 export WANDB_DIR=$ROOT/checkpoints/$EXP_NAME/wandb
