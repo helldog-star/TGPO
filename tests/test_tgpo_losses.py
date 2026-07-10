@@ -105,6 +105,7 @@ def test_forward_topk_mixed_with_grpo():
     )
     total.backward()
     assert torch.isfinite(total)
+    assert reg.item() >= -1e-6                                     # strict top-k forward KL >= 0
     assert torch.allclose(total, pg + COEF * reg)                  # mixed with GRPO
     assert stu_logits.grad is not None and torch.isfinite(stu_logits.grad).all()   # (A) into student
     assert log_prob.grad is not None and torch.isfinite(log_prob.grad).all()       # pg_loss into log_prob
@@ -152,6 +153,23 @@ def test_reverse_topk_reg_only():
     assert torch.allclose(total, COEF * reg)                       # reg_only drops pg_loss
     assert stu_topk_lp.grad is not None and torch.isfinite(stu_topk_lp.grad).all()
     assert not teacher_topk_logits.requires_grad
+
+
+def test_reverse_topk_teacher_score_shift_invariant():
+    """Reverse branch renormalizes teacher scores over the support via log_softmax, so it is
+    invariant to a per-position additive constant. This is what lets the teacher worker feed
+    teacher *log-probs* (logits - logZ_full) at the student top-k into the `teacher_topk_logits`
+    slot and get the correct KL(student-top-k support) -- the basis of reverse-on-student-topk."""
+    c = _common()
+    logits = torch.randn(BS, L, K)
+    shift = torch.randn(BS, L, 1)                      # per-position constant (e.g. -logZ_full)
+    stu = torch.randn(BS, L, K)
+    kw = dict(old_log_prob=c["old_lp"], log_prob=c["old_lp"], advantages=c["adv"], eos_mask=c["eos"],
+              teacher_ids_log_probs=c["t_ids_lp"], cliprange=0.2, teacher_coef=1.0,
+              student_teacher_topk_log_probs=stu, kl_direction="reverse", reg_only=True)
+    _, _, reg_logits, _, _ = LOSS_FN(teacher_topk_logits=logits, **kw)
+    _, _, reg_logp, _, _ = LOSS_FN(teacher_topk_logits=logits - shift, **kw)
+    assert torch.allclose(reg_logits, reg_logp, atol=1e-5)
 
 
 def test_reverse_topk_sgd_decreases():

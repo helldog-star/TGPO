@@ -509,17 +509,33 @@ class MIXRayPPOTrainer(RayPPOTrainer):
                             values = self.critic_wg.compute_values(batch)
                             batch = batch.union(values)
 
-                    # compute teacher
+                    # ---- meta flags consumed by student/teacher workers (set before BOTH) ----
+                    if self.use_teacher_reference_policy:
+                        batch.meta_info['use_teacher'] = self.use_teacher_reference_policy
+                        ##NOTE: 保存adv_estimator,use_tgpo_loss信息用于控制compute_log_prob的计算过程
+                        batch.meta_info['adv_estimator'] = self.config.algorithm.adv_estimator
+                        # topk_k: top-k KL(前向/反向共用)的 k。
+                        batch.meta_info['topk_k'] = int(self.config.algorithm.topk_k)
+                        batch.meta_info['use_tgpo_loss'] = self.config.actor_rollout_ref.actor.use_tgpo_loss
+                        batch.meta_info['use_tgpo_topk_kl'] = self.config.actor_rollout_ref.actor.get('use_tgpo_topk_kl', False)
+                        # reverse-KL top-k 需要 student(π_θ_old) top-k 作支撑, 故 student 前向必须在 teacher 之前跑。
+                        batch.meta_info['tgpo_kl_direction'] = self.config.actor_rollout_ref.actor.get('tgpo_kl_direction', 'forward')
+
+                    # recompute old_log_probs (student FIRST: reverse-KL top-k 用 student top-k 作支撑, teacher 要用它)
+                    with _timer('old_log_prob', timing_raw):
+                        old_log_prob = self.actor_rollout_wg.compute_log_prob(batch)
+                        entropys = old_log_prob.batch["entropys"]
+                        response_length = batch.batch['responses'].size(-1)
+                        response_mask = batch.batch['attention_mask'][:, -response_length:]
+                        loss_agg_mode = "token-mean"
+                        entropy_agg = agg_loss(loss_mat=entropys, loss_mask=response_mask, loss_agg_mode=loss_agg_mode)
+                        old_log_prob_metrics = {"actor/entropy": entropy_agg.detach().item()}
+                        metrics.update(old_log_prob_metrics)
+                        batch = batch.union(old_log_prob)
+
+                    # compute teacher (AFTER student: reverse-KL top-k consumes batch['student_topk_ids'])
                     if self.use_teacher_reference_policy:
                         with _timer("teacher_log_prob", timing_raw):
-                            batch.meta_info['use_teacher'] = self.use_teacher_reference_policy  
-                            ##NOTE: 保存adv_estimator,use_tgpo_loss信息用于控制compute_log_prob的计算过程
-                            batch.meta_info['adv_estimator'] = self.config.algorithm.adv_estimator
-                            # topk_k: top-k KL(前向/反向共用)的 k。
-                            batch.meta_info['topk_k'] = int(self.config.algorithm.topk_k)
-                            batch.meta_info['use_tgpo_loss'] = self.config.actor_rollout_ref.actor.use_tgpo_loss
-                            batch.meta_info['use_tgpo_topk_kl'] = self.config.actor_rollout_ref.actor.get('use_tgpo_topk_kl', False)
-                            
                             teacher_log_prob = self.teacher_ref_policy_wg.compute_teacher_ref_log_prob(batch)
                             batch = batch.union(teacher_log_prob)
 
@@ -531,18 +547,6 @@ class MIXRayPPOTrainer(RayPPOTrainer):
                                 min_teacher_coef = self.config.actor_rollout_ref.teacher_ref.min_teacher_coef
                                 current_val = teacher_coef - ((self.global_steps-1) * decay_rate)
                                 batch.meta_info['teacher_coef'] = max(current_val, min_teacher_coef)
-
-                    # recompute old_log_probs
-                    with _timer('old_log_prob', timing_raw):
-                        old_log_prob = self.actor_rollout_wg.compute_log_prob(batch)
-                        entropys = old_log_prob.batch["entropys"]
-                        response_length = batch.batch['responses'].size(-1)
-                        response_mask = batch.batch['attention_mask'][:, -response_length:]
-                        loss_agg_mode = "token-mean"
-                        entropy_agg = agg_loss(loss_mat=entropys, loss_mask=response_mask, loss_agg_mode=loss_agg_mode)
-                        old_log_prob_metrics = {"actor/entropy": entropy_agg.detach().item()}
-                        metrics.update(old_log_prob_metrics)
-                        batch = batch.union(old_log_prob)
 
                     # ===== Exp2 Policy-Gap probe (方法无关, 每步都记; step-1 的值=Policy Gap Curve 的 x 轴) =====
                     # teacher worker 两条分支都恒返回 teacher_log_prob / teacher_predict_ids, 故 KDRL/RKL/TGPO 同口径。

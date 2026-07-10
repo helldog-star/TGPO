@@ -351,12 +351,16 @@ def compute_token_on_tgpo_loss(
     else:
         # 默认 teacher 正则：student forcing teacher token 的 CE（硬标签, forward KL / 引导）。
         teacher_reg_loss = -verl_F.masked_mean(teacher_ids_log_probs, eos_mask)
-        # 可选：在 teacher top-k 分布上做 forward KL: KL(teacher || student)。
+        # 可选：在 teacher top-k 支撑上做严格前向 KL: D_KL(π_T || π_θ) = Σ_v π_T(v)[logπ_T(v) - logπ_θ(v)]。
+        # 前向 KL 按 π_T 加权(mass-covering), 故支撑取 teacher top-k; student 须在该支撑上重归一化才是严格 KL(≥0)。
         if teacher_topk_logits is not None and student_teacher_topk_log_probs is not None:
-            teacher_log_probs_topk = torch.log_softmax(teacher_topk_logits.float(), dim=-1)
+            teacher_log_probs_topk = torch.log_softmax(teacher_topk_logits.float(), dim=-1)  # teacher 在其 top-k 上的分布 (detach)
             teacher_probs_topk = torch.exp(teacher_log_probs_topk)
+            # student 全词表 log-softmax 在 teacher top-k id 上的取值 -> 在该支撑上重归一化 (可微):
+            student_logp_topk = student_teacher_topk_log_probs.float()
+            student_logp_norm = student_logp_topk - torch.logsumexp(student_logp_topk, dim=-1, keepdim=True)
             fwd_kl_token = torch.sum(
-                teacher_probs_topk * (teacher_log_probs_topk - student_teacher_topk_log_probs.float()),
+                teacher_probs_topk * (teacher_log_probs_topk - student_logp_norm),
                 dim=-1,
             )
             if loss_remove_token_mean is True:

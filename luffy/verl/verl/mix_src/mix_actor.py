@@ -634,6 +634,55 @@ class MIXDataParallelPPOActor(DataParallelPPOActor):
 
         return log_probs, entropys, topk_ids, topk_logits
 
+    def compute_logp_and_topk_at_ids(self, data: DataProto, calculate_entropy=False):
+        """Return this model's log-prob at `responses`, and its full-vocab log-softmax
+        gathered at the support ids in `data['teacher_topk_ids']` (shape bs,L,k).
+
+        Used for reverse-KL top-k where the SUPPORT is the student's top-k (passed in via
+        `teacher_topk_ids`) and we need the TEACHER's log-prob on that support. Reuses the
+        existing rmpad/ulysses gather in `_forward_teacher_ids_micro_batch`.
+        """
+        self.actor_module.eval()
+        micro_batch_size = data.meta_info['micro_batch_size']
+        temperature = data.meta_info['temperature']
+        use_dynamic_bsz = data.meta_info['use_dynamic_bsz']
+
+        select_keys = ['responses', 'input_ids', 'attention_mask', 'position_ids',
+                       'teacher_predict_ids', 'teacher_topk_ids']
+        batch = data.select(batch_keys=select_keys).batch
+
+        if use_dynamic_bsz:
+            max_token_len = data.meta_info['max_token_len'] * self.ulysses_sequence_parallel_size
+            micro_batches, indices = rearrange_micro_batches(batch=batch, max_token_len=max_token_len)
+        else:
+            micro_batches = batch.split(micro_batch_size)
+
+        log_probs_lst, entropy_lst, topk_logp_lst = [], [], []
+        for micro_batch in micro_batches:
+            with torch.no_grad():
+                entropy, log_probs, _teacher_ids_lp, topk_logp = self._forward_teacher_ids_micro_batch(
+                    micro_batch, temperature=temperature, return_teacher_topk_log_probs=True,
+                )
+            log_probs_lst.append(log_probs)
+            topk_logp_lst.append(topk_logp)
+            if calculate_entropy:
+                entropy_lst.append(entropy)
+
+        log_probs = torch.concat(log_probs_lst, dim=0)
+        topk_logp = torch.concat(topk_logp_lst, dim=0)
+        entropys = torch.concat(entropy_lst, dim=0) if calculate_entropy else None
+
+        if use_dynamic_bsz:
+            indices = list(itertools.chain.from_iterable(indices))
+            assert len(indices) == log_probs.size(0), f"{len(indices)} vs. {log_probs.size()}"
+            revert_indices = torch.tensor(get_reverse_idx(indices), dtype=torch.long)
+            log_probs = log_probs[revert_indices]
+            topk_logp = topk_logp[revert_indices]
+            if calculate_entropy:
+                entropys = entropys[revert_indices]
+
+        return log_probs, entropys, topk_logp
+
 
     def compute_log_prob(self, data: DataProto, calculate_entropy=False) -> torch.Tensor:
         """Compute the log probability of the responses given input_ids, attention_mask and position_ids

@@ -91,8 +91,8 @@ actor_rollout_ref:
     sft_loss_coef: 1.0
     use_sft_multitask_loss: False
     use_tgpo_loss: False
-    use_tgpo_topk_kl: False
-    tgpo_kl_direction: forward   # forward = TGPO(CE/前向引导); reverse = 分布级 reverse KL(§2 RKL-Reg 对照)
+    use_tgpo_topk_kl: False      # 分布级 top-k KL 的支撑: forward 用 teacher top-k, reverse 用 student(π_θ_old) top-k
+    tgpo_kl_direction: forward   # forward=前向KL(teacher top-k支撑,CE/软标签); reverse=反向KL(student top-k支撑); reverse_k2/reverse_k3=逐点估计
     tgpo_reg_only: False         # True = 目标只留 teacher 正则项, 丢 GRPO pg_loss(§2 纯 RKL)
     use_kdrl_loss: False
     use_rkl_reg_loss: False

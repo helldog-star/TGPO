@@ -481,11 +481,26 @@ class MIXActorRolloutRefWorker(Worker):
         with self.ulysses_sharding_manager:
             data = self.ulysses_sharding_manager.preprocess_data(data)
 
-            old_log_probs, entropys = self.actor.compute_log_prob(data=data, calculate_entropy=True)
-            output = DataProto.from_dict(
-                tensors={"old_log_probs": old_log_probs, "entropys": entropys},
-                meta_info={"temperature": self.config.rollout.temperature},
-            )
+            # reverse-KL top-k: 支撑取 student(π_θ_old) 的 top-k(mode-seeking 该按 student 加权),
+            # 这里额外产出 student_topk_ids, 供 teacher 在这些 id 上取 logp。
+            reverse_topk = (data.meta_info.get("use_tgpo_topk_kl", False)
+                            and data.meta_info.get("tgpo_kl_direction", "forward") == "reverse")
+            if reverse_topk:
+                topk_k = int(data.meta_info["topk_k"])
+                old_log_probs, entropys, student_topk_ids, _student_topk_logits = self.actor.compute_log_prob_w_topk(
+                    data=data, calculate_entropy=True, topk_k=topk_k,
+                )
+                output = DataProto.from_dict(
+                    tensors={"old_log_probs": old_log_probs, "entropys": entropys,
+                             "student_topk_ids": student_topk_ids},
+                    meta_info={"temperature": self.config.rollout.temperature},
+                )
+            else:
+                old_log_probs, entropys = self.actor.compute_log_prob(data=data, calculate_entropy=True)
+                output = DataProto.from_dict(
+                    tensors={"old_log_probs": old_log_probs, "entropys": entropys},
+                    meta_info={"temperature": self.config.rollout.temperature},
+                )
 
             data = self.ulysses_sharding_manager.postprocess_data(data)
 
@@ -539,7 +554,28 @@ class MIXActorRolloutRefWorker(Worker):
             data = self.ulysses_sharding_manager.preprocess_data(data)
             adv_estimator = data.meta_info.get("adv_estimator", None)
             use_tgpo_topk_kl = data.meta_info.get("use_tgpo_topk_kl", False)
-            if use_tgpo_topk_kl:
+            kl_direction = data.meta_info.get("tgpo_kl_direction", "forward")
+            if use_tgpo_topk_kl and kl_direction == "reverse":
+                # reverse-KL top-k: 支撑 = student(π_θ_old) top-k(student worker 已产出 student_topk_ids)。
+                # teacher 在这些 student id 上取 logp;放进 teacher_topk_ids/teacher_topk_logits 两个键,
+                # 下游 actor/loss 无需改动(loss 里 log_softmax 会把这些 logp 在支撑上重归一化)。
+                data.batch["teacher_topk_ids"] = data.batch["student_topk_ids"]      # gather 支撑 = student top-k
+                data.batch["teacher_predict_ids"] = data.batch["responses"]         # 占位(reverse 忽略 CE 输出)
+                log_probs, entropys, teacher_topk_logp = self.teacher_ref_policy.compute_logp_and_topk_at_ids(
+                    data=data, calculate_entropy=True,
+                )
+                response_length = data.batch["responses"].size(1)
+                attention_mask = data.batch["attention_mask"][:, -response_length-1:-1]
+                predict_ids = data.batch["responses"].masked_fill(attention_mask == 0, self.tokenizer.pad_token_id)
+                output = DataProto.from_dict(
+                    tensors={
+                        "teacher_log_prob": log_probs,
+                        "teacher_predict_ids": predict_ids,              # 占位, 仅为 select_keys 完整
+                        "teacher_topk_ids": data.batch["student_topk_ids"],   # 支撑 = student top-k
+                        "teacher_topk_logits": teacher_topk_logp,        # teacher 在支撑上的 logp(loss 会重归一化)
+                    }
+                )
+            elif use_tgpo_topk_kl:
                 topk_k = int(data.meta_info["topk_k"])
                 log_probs, entropys, teacher_topk_ids, teacher_topk_logits = self.teacher_ref_policy.compute_log_prob_w_topk(
                     data=data,
