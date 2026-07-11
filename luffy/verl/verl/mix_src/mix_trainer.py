@@ -520,6 +520,10 @@ class MIXRayPPOTrainer(RayPPOTrainer):
                         batch.meta_info['use_tgpo_topk_kl'] = self.config.actor_rollout_ref.actor.get('use_tgpo_topk_kl', False)
                         # reverse-KL top-k 需要 student(π_θ_old) top-k 作支撑, 故 student 前向必须在 teacher 之前跑。
                         batch.meta_info['tgpo_kl_direction'] = self.config.actor_rollout_ref.actor.get('tgpo_kl_direction', 'forward')
+                        # MC 版 teacher 标签: True 时 teacher 逐位置从 π_T 采 1 个 token 代替 argmax(众数),
+                        # 使默认 forward-CE 项成为 forward-KL 的单样本无偏估计(与 argmax 同成本可比 ablation)。
+                        batch.meta_info['teacher_label_sample'] = self.config.actor_rollout_ref.actor.get('teacher_label_sample', False)
+                        batch.meta_info['teacher_label_sample_temp'] = float(self.config.actor_rollout_ref.actor.get('teacher_label_sample_temp', 1.0))
 
                     # recompute old_log_probs (student FIRST: reverse-KL top-k 用 student top-k 作支撑, teacher 要用它)
                     with _timer('old_log_prob', timing_raw):

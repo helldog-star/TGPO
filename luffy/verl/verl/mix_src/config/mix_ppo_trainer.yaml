@@ -92,10 +92,11 @@ actor_rollout_ref:
     use_sft_multitask_loss: False
     use_tgpo_loss: False
     use_tgpo_topk_kl: False      # 分布级 top-k KL 的支撑: forward 用 teacher top-k, reverse 用 student(π_θ_old) top-k
-    tgpo_kl_direction: forward   # forward=前向KL(teacher top-k支撑,CE/软标签); reverse=反向KL(student top-k支撑); reverse_k2/reverse_k3=逐点估计
+    tgpo_kl_direction: forward   # forward=前向KL(teacher top-k支撑,CE/软标签); reverse=分布级反向KL(student top-k支撑); reverse_k1=score-function(REINFORCE,配reg_only即原use_rkl_reg_loss); reverse_k2/reverse_k3=逐点估计
     tgpo_reg_only: False         # True = 目标只留 teacher 正则项, 丢 GRPO pg_loss(§2 纯 RKL)
+    teacher_label_sample: False       # forward-CE 的 teacher 标签: False=argmax(众数); True=从 π_T 采样 1 token(forward-KL 单样本无偏估计)
+    teacher_label_sample_temp: 1.0    # 采样温度; 1.0=teacher 原分布(与 argmax 同一 π_T, 只是取样 vs 取众数)
     use_kdrl_loss: False
-    use_rkl_reg_loss: False
 
   ref:
     fsdp_config:

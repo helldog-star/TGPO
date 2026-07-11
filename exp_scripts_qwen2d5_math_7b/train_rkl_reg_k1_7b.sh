@@ -98,7 +98,10 @@ python3 -m verl.mix_src.main_mix_ppo \
     actor_rollout_ref.ref.use_ref=False \
     actor_rollout_ref.actor.use_off_policy_loss=False \
     actor_rollout_ref.actor.use_kdrl_loss=False \
-    actor_rollout_ref.actor.use_rkl_reg_loss=True \
+    actor_rollout_ref.actor.use_tgpo_loss=True \
+    actor_rollout_ref.actor.use_tgpo_topk_kl=False \
+    actor_rollout_ref.actor.tgpo_kl_direction=reverse_k1 \
+    actor_rollout_ref.actor.tgpo_reg_only=True \
     actor_rollout_ref.actor.off_policy_normalize=False \
     actor_rollout_ref.actor.off_policy_loss_impl=token \
     algorithm.grpo_use_std=True \

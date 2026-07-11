@@ -7,6 +7,7 @@ Covers, for each teacher-reg variant:
   - forward CE (hard label, plain TGPO)            kl_direction="forward", no top-k
   - forward top-k KL (soft distribution)           kl_direction="forward" + top-k
   - reverse top-k KL (distribution level)          kl_direction="reverse"
+  - reverse K1 (score-function; ex use_rkl_reg_loss) kl_direction="reverse_k1"
   - reverse K2 / K3 (pointwise)                    kl_direction="reverse_k2" / "reverse_k3"
 
 Checks: runs & finite; reg_only drops pg_loss (total==coef*reg); +GRPO gives total==pg+coef*reg;
@@ -218,6 +219,51 @@ def test_reverse_k2():
 
 def test_reverse_k3():
     _reverse_pointwise("reverse_k3")
+
+
+# --------------------------------------------------------------------------- #
+# reverse K1 (score-function surrogate) == the retired compute_token_on_rkl_reg_loss.
+# Its VALUE has no KL meaning; only its gradient = ∇ D_KL(π_θ||π_T). Unlike k2/k3 it
+# keeps the policy-sampling gradient (B) and need not be >= 0.
+# --------------------------------------------------------------------------- #
+def test_reverse_k1_equals_retired_rkl_reg():
+    c = _common()
+    lp = c["old_lp"].clone().requires_grad_(True)
+    teacher_lp = torch.randn(BS, L)                       # π_T at student tokens (no grad)
+
+    total, pg, reg, _, _ = LOSS_FN(
+        old_log_prob=c["old_lp"], log_prob=lp, advantages=c["adv"], eos_mask=c["eos"],
+        teacher_ids_log_probs=c["t_ids_lp"], cliprange=0.2, teacher_coef=COEF,
+        teacher_log_prob=teacher_lp, kl_direction="reverse_k1", reg_only=True,
+    )
+    total.backward()
+
+    # (1) value == old surrogate mean( stop_grad(logρ) · logπ_θ )
+    w = (lp.detach() - teacher_lp)                         # logρ, detached weight
+    ref_reg = _masked_mean(w * lp.detach(), c["eos"])
+    assert torch.allclose(reg.detach(), ref_reg, atol=1e-6)
+    assert torch.allclose(total.detach(), COEF * ref_reg, atol=1e-6)   # reg_only drops pg_loss
+
+    # (2) gradient == score-function ∇ = coef · logρ · ∇logπ_θ  (weight detached, no "+1")
+    expected_grad = COEF * w * c["eos"] / (c["eos"].sum() + 1e-8)
+    assert lp.grad is not None and torch.allclose(lp.grad, expected_grad, atol=1e-6)
+    assert teacher_lp.grad is None                          # teacher detached (score-function weight)
+
+
+def test_reverse_k1_mixed_with_grpo():
+    """reg_only=False ⇒ total == pg_loss + coef·reg (adds GRPO result reward back)."""
+    c = _common()
+    lp = c["old_lp"].clone().requires_grad_(True)
+    teacher_lp = torch.randn(BS, L)
+    total, pg, reg, _, _ = LOSS_FN(
+        old_log_prob=c["old_lp"], log_prob=lp, advantages=c["adv"], eos_mask=c["eos"],
+        teacher_ids_log_probs=c["t_ids_lp"], cliprange=0.2, teacher_coef=COEF,
+        teacher_log_prob=teacher_lp, kl_direction="reverse_k1", reg_only=False,
+    )
+    total.backward()
+    assert torch.isfinite(total)
+    assert torch.allclose(total, pg + COEF * reg)
+    assert lp.grad is not None and torch.isfinite(lp.grad).all()
 
 
 if __name__ == "__main__":

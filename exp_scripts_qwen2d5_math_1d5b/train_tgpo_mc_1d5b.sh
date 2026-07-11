@@ -11,7 +11,7 @@ which python
 ROOT=/mnt/dolphinfs/ssd_pool/docker/user/hadoop-nlp-sh02/hadoop-aipnlp/FMG/liuxinyu67/luffy
 export PYTHONPATH=$ROOT:$PYTHONPATH
 
-ray stop 
+ray stop
 
 export no_proxy="127.0.0.1,localhost"
 export NO_PROXY="127.0.0.1,localhost"
@@ -22,7 +22,8 @@ export VLLM_ATTENTION_BACKEND=XFORMERS
 export MODEL_PATH=/mnt/dolphinfs/ssd_pool/docker/user/hadoop-nlp-sh02/hadoop-aipnlp/FMG/liuxinyu67/models/Qwen2.5-Math-1.5B-aligned
 export TEACHER_MODEL_PATH=/mnt/dolphinfs/ssd_pool/docker/user/hadoop-nlp-sh02/hadoop-aipnlp/FMG/liuxinyu67/models/Qwen3-30B-A3B-Thinking-2507-aligned
 export DATA_DIR=$ROOT/data/
-export EXP_NAME=rkl_reg_k3_qwen2d5_math_1d5b_a3b35k
+# MC 版: teacher 标签从 π_T 采样(而非 argmax 众数); 与 tgpo_reg(argmax) 严格同配置, 仅差采样开关, 可直接对比
+export EXP_NAME=tgpo_mc_qwen2d5_math_1d5b_a3b35k
 
 export WANDB_PROJECT="tgpo"
 export WANDB_MODE="offline"
@@ -47,9 +48,9 @@ python3 -m verl.mix_src.main_mix_ppo \
     data.max_prompt_length=1024 \
     data.max_response_length=8192 \
     actor_rollout_ref.teacher_ref.enable=True \
-    actor_rollout_ref.teacher_ref.teacher_coef=1.0 \
-    actor_rollout_ref.teacher_ref.decay_rate=0.0 \
     actor_rollout_ref.teacher_ref.min_teacher_coef=0.0 \
+    actor_rollout_ref.teacher_ref.teacher_coef=0.002 \
+    actor_rollout_ref.teacher_ref.decay_rate=0.00001 \
     actor_rollout_ref.teacher_ref.model_path=$TEACHER_MODEL_PATH \
     actor_rollout_ref.teacher_ref.fsdp_config.param_offload=True \
     actor_rollout_ref.model.path=$MODEL_PATH \
@@ -97,11 +98,10 @@ python3 -m verl.mix_src.main_mix_ppo \
     actor_rollout_ref.rollout.prefix_reward_weight_alpha=1.0 \
     actor_rollout_ref.ref.use_ref=False \
     actor_rollout_ref.actor.use_off_policy_loss=False \
-    actor_rollout_ref.actor.use_kdrl_loss=False \
     actor_rollout_ref.actor.use_tgpo_loss=True \
-    actor_rollout_ref.actor.use_tgpo_topk_kl=False \
-    actor_rollout_ref.actor.tgpo_kl_direction=reverse_k3 \
-    actor_rollout_ref.actor.tgpo_reg_only=True \
+    actor_rollout_ref.actor.tgpo_kl_direction=forward \
+    actor_rollout_ref.actor.teacher_label_sample=True \
+    actor_rollout_ref.actor.teacher_label_sample_temp=1.0 \
     actor_rollout_ref.actor.off_policy_normalize=False \
     actor_rollout_ref.actor.off_policy_loss_impl=token \
     algorithm.grpo_use_std=True \

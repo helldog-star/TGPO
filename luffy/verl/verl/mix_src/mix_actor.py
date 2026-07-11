@@ -80,12 +80,9 @@ class MIXDataParallelPPOActor(DataParallelPPOActor):
             if self.config.get('use_tgpo_topk_kl', False):
                 select_keys.append('teacher_topk_ids')
                 select_keys.append('teacher_topk_logits')
-            if self.config.get('tgpo_kl_direction', 'forward') in ('reverse_k2', 'reverse_k3'):
+            if self.config.get('tgpo_kl_direction', 'forward') in ('reverse_k1', 'reverse_k2', 'reverse_k3'):
                 select_keys.append('teacher_log_prob')
         if self.config.use_kdrl_loss:
-            teacher_coef = data.meta_info["teacher_coef"]
-            select_keys.append('teacher_log_prob')
-        if self.config.get('use_rkl_reg_loss', False):
             teacher_coef = data.meta_info["teacher_coef"]
             select_keys.append('teacher_log_prob')
 
@@ -272,27 +269,6 @@ class MIXDataParallelPPOActor(DataParallelPPOActor):
                         }
                         append_to_dict(metrics, data)
 
-                    elif self.config.get('use_rkl_reg_loss', False):
-
-                        from .mix_core_alg import compute_token_on_rkl_reg_loss
-                        loss_fn = compute_token_on_rkl_reg_loss
-                        teacher_log_prob = data['teacher_log_prob']
-                        pg_loss, lm_loss, teacher_reg_loss, pg_clipfrac, ppo_kl = loss_fn(old_log_prob=old_log_prob, log_prob=log_prob,
-                                                                                            advantages=advantages,
-                                                                                            eos_mask=response_mask,
-                                                                                            teacher_log_prob=teacher_log_prob,
-                                                                                            teacher_coef=teacher_coef,
-                                                                                            cliprange=clip_ratio,
-                                                                                            loss_remove_token_mean=self.config.loss_remove_token_mean,
-                                                                                            loss_remove_clip=self.config.loss_remove_clip)
-                        data = {
-                            'actor/lm_loss': lm_loss.detach().item(),
-                            'actor/teacher_reg_loss': teacher_reg_loss.detach().item(),
-                            'actor/teacher_coef': teacher_coef
-                        }
-                        append_to_dict(metrics, data)
-
-
                     else:
                         pg_loss, pg_clipfrac, ppo_kl = core_algos.compute_policy_loss(old_log_prob=old_log_prob, log_prob=log_prob,
                                                                                 advantages=advantages,
@@ -409,12 +385,19 @@ class MIXDataParallelPPOActor(DataParallelPPOActor):
         else:
             micro_batches = batch.split(micro_batch_size)
 
+        # MC 版 teacher 标签开关: True 时逐位置从 π_T 采样 1 个 token 代替 argmax(众数),
+        # 使 CE 项成为 forward-KL 的单样本无偏估计。默认 False = 原 argmax 行为。
+        sample_ids = data.meta_info.get('teacher_label_sample', False)
+        sample_temp = float(data.meta_info.get('teacher_label_sample_temp', 1.0))
+
         log_probs_lst = []
         entropy_lst = []
         predict_ids_lst = []
         for micro_batch in micro_batches:
             with torch.no_grad():
-                entropy, log_probs, predict_ids = self._forward_micro_batch(micro_batch, temperature=temperature, return_ids=True)
+                entropy, log_probs, predict_ids = self._forward_micro_batch(
+                    micro_batch, temperature=temperature, return_ids=True,
+                    sample_ids=sample_ids, sample_temp=sample_temp)
             log_probs_lst.append(log_probs)
             predict_ids_lst.append(predict_ids)
             if calculate_entropy:
@@ -444,6 +427,8 @@ class MIXDataParallelPPOActor(DataParallelPPOActor):
         return_ids=False,
         return_topk=False,
         topk_k=100,
+        sample_ids=False,
+        sample_temp=1.0,
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         """
         Returns: 
@@ -494,11 +479,21 @@ class MIXDataParallelPPOActor(DataParallelPPOActor):
                 # if use_sp: ((total_nnz / sp) + pad) ; if not use_sp: (batch, seqlen)
                 log_probs = logprobs_from_logits(logits=logits_rmpad, labels=input_ids_rmpad_rolled)
 
-                # 如果需要 return_ids，先在 unpad 状态下计算 argmax，避免 OOM
+                # 如果需要 return_ids，先在 unpad 状态下计算 argmax/采样，避免 OOM
                 predict_ids_rmpad = None
                 if return_ids:
-                    # 获取预测的 token ID
-                    predict_ids_rmpad = torch.argmax(logits_rmpad, dim=-1) # (total_nnz,)
+                    if sample_ids:
+                        # MC 版 teacher 标签: 逐位置从 π_T=softmax(logits/sample_temp) 采 1 个 token,
+                        # 是 forward-KL 梯度 -E_{y~π_T}[∇logπ_θ(y)] 的单样本无偏估计。
+                        # sample_temp=1.0 时即 teacher 原分布(与 argmax 同一个 π_T, 只是取样 vs 取众数)。
+                        # softmax 沿用 bf16, 与 argmax 同显存量级。
+                        scaled_rmpad = logits_rmpad if sample_temp == 1.0 else logits_rmpad / sample_temp
+                        probs_rmpad = torch.softmax(scaled_rmpad, dim=-1)
+                        predict_ids_rmpad = torch.multinomial(probs_rmpad, num_samples=1).squeeze(-1)  # (total_nnz,)
+                        del probs_rmpad
+                    else:
+                        # 获取预测的 token ID
+                        predict_ids_rmpad = torch.argmax(logits_rmpad, dim=-1) # (total_nnz,)
                 topk_ids_rmpad = None
                 topk_logits_rmpad = None
                 if return_topk:
@@ -563,7 +558,15 @@ class MIXDataParallelPPOActor(DataParallelPPOActor):
                 entropy = verl_F.entropy_from_logits(logits)  # (bsz, response_length)
                 predict_ids = None
                 if return_ids:
-                    predict_ids = torch.argmax(logits, dim=-1) # (bs, response_len)
+                    if sample_ids:
+                        # MC 版 teacher 标签: 从 π_T=softmax(logits/sample_temp) 逐位置采 1 个 token。
+                        scaled = logits if sample_temp == 1.0 else logits / sample_temp
+                        probs = torch.softmax(scaled, dim=-1)  # (bs, response_len, vocab)
+                        bs_, rl_, vs_ = probs.shape
+                        predict_ids = torch.multinomial(probs.reshape(-1, vs_), num_samples=1).reshape(bs_, rl_)
+                        del probs
+                    else:
+                        predict_ids = torch.argmax(logits, dim=-1) # (bs, response_len)
                 topk_ids = None
                 topk_logits = None
                 if return_topk:

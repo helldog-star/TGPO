@@ -279,14 +279,17 @@ def compute_token_on_tgpo_loss(
         teacher_ids_log_probs: (bs, response_length) - student对teacher预测token的log概率
         cliprange: PPO裁剪范围
         teacher_coef: 正则化系数 λ / w
-        kl_direction: teacher 正则项的形态, 均为 pathwise (A) 可微 loss, 不进 advantage / 不乘 ratio:
+        kl_direction: teacher 正则项的形态:
                       "forward"     = TGPO 的 forward KL / CE 引导 (默认, 落 teacher token);
                       "reverse"     = 分布级 reverse KL D_KL(π_θ||π_T) (teacher top-k 上, student
                                       在该支撑重归一化)。要 teacher_topk_logits + student_teacher_topk_log_probs。
+                      "reverse_k1"  = 逐点 score-function(REINFORCE)估计量: mean(stop_grad(logρ)·logπ_θ),
+                                      保留策略采样梯度 (B); 配 reg_only=True 即纯 RKL。要 teacher_log_prob。
                       "reverse_k2"  = 逐点 Schulman K2: ½·logρ²      (低方差、有偏)。要 teacher_log_prob。
                       "reverse_k3"  = 逐点 Schulman K3: exp(-logρ)-1+logρ (reverse-KL 无偏且恒≥0)。要 teacher_log_prob。
-                      其中 logρ_t = logπ_θ(a_t) - logπ_T(a_t) 在 on-policy 采样 token a_t 处, 梯度只穿 log_prob。
-        teacher_log_prob: (bs, response_length) teacher 对 student 采样 token 的 log_prob (reverse_k2/k3 用)。
+                      其中 logρ_t = logπ_θ(a_t) - logπ_T(a_t) 在 on-policy 采样 token a_t 处。
+                      reverse/reverse_k2/reverse_k3 为 pathwise (A); reverse_k1 为 score-function (B)。
+        teacher_log_prob: (bs, response_length) teacher 对 student 采样 token 的 log_prob (reverse_k1/k2/k3 用)。
         reg_only: True 时目标只保留 teacher 正则项, 丢掉 GRPO 的 pg_loss
                   (用于 §2 纯 RKL: 不掺 RLVR 结果奖励)。
 
@@ -348,6 +351,20 @@ def compute_token_on_tgpo_loss(
             teacher_reg_loss = (rkl_token * eos_mask).sum() / eos_mask.shape[-1]
         else:
             teacher_reg_loss = verl_F.masked_mean(rkl_token, eos_mask)
+    elif kl_direction == "reverse_k1":
+        # 逐点 reverse-KL 的 score-function(REINFORCE, k1)估计量, 作为可微 surrogate。
+        # 目标梯度 = E_{a~π_θ}[logρ · ∇logπ_θ] = ∇ D_KL(π_θ||π_T); logρ = logπ_θ(a) - logπ_T(a)。
+        # surrogate = mean(stop_grad(logρ) · logπ_θ): 权重必须 detach, 仅 log_prob 带梯度; 无 “+1”(E[∇logπ_θ]=0)。
+        # 与 reverse_k2/k3(pathwise A)不同, 本项保留策略采样梯度(B); 其“数值”无 KL 含义, 仅梯度=∇reverse KL。
+        # (原独立 flag use_rkl_reg_loss 已并入此分支, 配 tgpo_reg_only=True 即纯 RKL。)
+        assert teacher_log_prob is not None, \
+            "kl_direction='reverse_k1' 需要 teacher_log_prob (teacher 对 student 采样 token 的 log_prob)"
+        log_ratio = log_prob - teacher_log_prob            # logρ (仅取 detach 做权重)
+        sf_token = log_ratio.detach() * log_prob           # ∇(sf_token) = logρ · ∇logπ_θ = ∇(reverse KL)
+        if loss_remove_token_mean is True:
+            teacher_reg_loss = (sf_token * eos_mask).sum() / eos_mask.shape[-1]
+        else:
+            teacher_reg_loss = verl_F.masked_mean(sf_token, eos_mask)
     else:
         # 默认 teacher 正则：student forcing teacher token 的 CE（硬标签, forward KL / 引导）。
         teacher_reg_loss = -verl_F.masked_mean(teacher_ids_log_probs, eos_mask)
@@ -424,63 +441,6 @@ def compute_token_on_kdrl_loss(
     
     # J_KDRL(θ) = J_GRPO(θ) - β * D_KL^k2(π_θ || π_T)
     total_loss = pg_loss + teacher_coef * teacher_reg_loss
-
-    return total_loss, pg_loss, teacher_reg_loss, pg_clipfrac, ppo_kl
-
-
-# rkl_reg (k1 / score-function): 纯 reverse KL 作为可微 loss, 不含 GRPO 结果奖励 (pg_loss)。
-# 用途 = 论文 §2 对照(分布级 RKL-Reg 的姊妹版): 标准 RKL(OP Distill) 把 reverse KL 放进
-# advantage(REINFORCE), 这里把同一个 score-function 估计写成可微 loss 项。无 “+1” 直接项(其期望恒为0),
-# 权重 stop_grad(logρ) detach。二者都不掺 RLVR, 论证 reverse KL 无论放哪在 cross-family 都崩。
-def compute_token_on_rkl_reg_loss(
-    old_log_prob: torch.Tensor,      # π_θ_old 的 log prob (仅用于日志 ppo_kl / pg_loss 诊断)
-    log_prob: torch.Tensor,          # π_θ 的 log prob (当前策略, 带梯度)
-    advantages: torch.Tensor,        # 优势函数 (仅用于诊断性 pg_loss, 不进入目标)
-    eos_mask: torch.Tensor,          # token mask
-    teacher_log_prob: torch.Tensor,  # π_T 的 log prob (teacher 对 student 采样 token 的 logp, 无梯度)
-    cliprange: float,                # PPO clip 范围 (仅诊断)
-    teacher_coef: float = 1.0,       # w 系数; 纯 RKL 默认 1.0 (与标准 RKL 的 advantage 同尺度)
-    loss_remove_clip: bool = False,
-    loss_remove_token_mean: bool = False
-):
-    """
-    纯 RKL-Reg Loss (k1 / score-function surrogate): 目标 J(θ) = w * D_KL(π_θ || π_T), 无 GRPO 项。
-
-    on-policy reverse KL 的梯度 = E[∇logπ_θ · logρ] (score-function; logρ = logp - teacher_logp)。
-    其可微 surrogate(梯度相等) = mean( stop_grad(logρ) · logπ_θ ):
-      - 权重 stop_grad(logρ) 必须 detach, 否则会多出 logp·∇logp 杂项。
-      - 不含 “+1” 直接项: E_πθ[∇logπ_θ] = ∇∫π_θ = 0, 常数 baseline 不改期望梯度, 故丢弃。
-    注意: teacher_reg_loss 的“数值”无 KL 含义(只是 surrogate), 仅其“梯度”= ∇(reverse KL)。
-    与标准 RKL(OP Distill) 几乎同一估计量(后者把 logρ 当 advantage 走 -A·ratio); 区别仅在
-    logρ 用 current_logp(此处)还是 old_logp(OP Distill) + 无 GRPO 组归一化/clip。
-    与分布级 RKL-Reg(tgpo_loss kl_direction=reverse) 互为姊妹: 那个是全分布解析可微、无采样方差。
-    """
-
-    # 以下 pg_loss / ppo_kl / pg_clipfrac 仅用于 wandb 诊断, 不进入梯度目标。
-    negative_approx_kl = log_prob - old_log_prob
-    ratio = torch.exp(negative_approx_kl)
-    ppo_kl = verl_F.masked_mean(-negative_approx_kl, eos_mask)
-
-    pg_losses = -advantages * ratio
-    pg_losses2 = -advantages * torch.clamp(ratio, 1.0 - cliprange, 1.0 + cliprange)
-    if loss_remove_clip is False:
-        pg_losses = torch.max(pg_losses, pg_losses2)
-    if loss_remove_token_mean is True:
-        pg_loss = (pg_losses * eos_mask).sum() / eos_mask.shape[-1]
-    else:
-        pg_loss = verl_F.masked_mean(pg_losses, eos_mask)
-    pg_clipfrac = verl_F.masked_mean(torch.gt(pg_losses2, pg_losses).float(), eos_mask)
-
-    # score-function surrogate: weight = stop_grad(logρ), 仅 log_prob 带梯度, 无 “+1”。
-    R_theta = log_prob - teacher_log_prob          # logρ (含梯度, 但下面只取其 detach 做权重)
-    sf_token = R_theta.detach() * log_prob          # ∇(sf_token) = logρ · ∇logπ_θ = ∇(reverse KL)
-    if loss_remove_token_mean is True:
-        teacher_reg_loss = (sf_token * eos_mask).sum() / eos_mask.shape[-1]
-    else:
-        teacher_reg_loss = verl_F.masked_mean(sf_token, eos_mask)
-
-    # 纯 RKL: 目标里不含 pg_loss(GRPO)。外层最小化 total_loss ⟺ 梯度下降 reverse KL。
-    total_loss = teacher_coef * teacher_reg_loss
 
     return total_loss, pg_loss, teacher_reg_loss, pg_clipfrac, ppo_kl
 

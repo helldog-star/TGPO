@@ -111,7 +111,6 @@ python3 -m verl.mix_src.main_mix_ppo \
     actor_rollout_ref.ref.use_ref=False \
     actor_rollout_ref.actor.use_off_policy_loss=False \
     actor_rollout_ref.actor.use_kdrl_loss=False \
-    actor_rollout_ref.actor.use_rkl_reg_loss=False \
     actor_rollout_ref.actor.use_tgpo_loss=True \
     actor_rollout_ref.actor.use_tgpo_topk_kl=True \
     actor_rollout_ref.actor.tgpo_kl_direction=forward \
