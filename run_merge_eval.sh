@@ -145,6 +145,66 @@ else
 
     (cd "$EVAL_SCRIPTS_DIR" && bash my_eval_sh.sh) || { echo "评估失败"; exit 1; }
     echo "评估结果: $OUTPUT_DIR （逐 benchmark 准确率见 $OUTPUT_DIR/${MODEL_NAME}.log）"
+
+    # ---------- 2b. 数学主指标汇总（从 .log 解析 6 个数学 benchmark，算宏平均） ----------
+    EVAL_LOG="$OUTPUT_DIR/${MODEL_NAME}.log"
+    SUMMARY="$OUTPUT_DIR/summary.txt"
+    if [[ -f "$EVAL_LOG" ]]; then
+        echo "========== 数学主指标汇总 =========="
+        # 数学 benchmark 固定顺序；acc 为 0~1 小数，逐题(含 avg@n 重复采样)平均后按 benchmark 宏平均。
+        # 非数学集(arc_c/gpqa/mmlu_pro)若出现在同一 log 里，单独列在“其它”，不计入数学宏平均。
+        MODEL_NAME="$MODEL_NAME" python - "$EVAL_LOG" "$SUMMARY" <<'PY'
+import os, re, sys
+log_path, summary_path = sys.argv[1], sys.argv[2]
+model_name = os.environ.get("MODEL_NAME", "")
+MATH = ["math", "minerva", "olympiad_bench", "amc", "aime", "aime25"]
+OTHER = ["arc_c", "gpqa", "mmlu_pro"]   # 已知非数学集白名单(避免误收 diff_cnt/accuracy 等噪声行)
+PRETTY = {"math": "MATH500", "minerva": "Minerva", "olympiad_bench": "OlympiadBench",
+          "amc": "AMC", "aime": "AIME24", "aime25": "AIME25"}
+# 匹配形如 "amc: 0.5234" 的行，取每个 source 的最后一次出现
+pat = re.compile(r'^\s*([A-Za-z0-9_]+)\s*:\s*([0-9]*\.?[0-9]+)\s*$')
+acc = {}
+with open(log_path) as f:
+    for line in f:
+        m = pat.match(line)
+        if m:
+            acc[m.group(1)] = float(m.group(2))
+
+lines = []
+lines.append(f"model: {model_name}")
+lines.append("-" * 40)
+math_vals = []
+for s in MATH:
+    if s in acc:
+        v = acc[s]
+        math_vals.append(v)
+        lines.append(f"  {PRETTY[s]:<14} {v*100:6.2f}")
+    else:
+        lines.append(f"  {PRETTY[s]:<14}   --   (未在 log 中找到)")
+lines.append("-" * 40)
+if math_vals:
+    macro = sum(math_vals) / len(math_vals)
+    lines.append(f"  {'MATH-AVG':<14} {macro*100:6.2f}   (宏平均, {len(math_vals)}/6 个 benchmark)")
+else:
+    lines.append("  MATH-AVG        --   (未解析到任何数学 benchmark)")
+
+# 其它(非数学)集，仅收白名单内的，避免误收 diff_cnt/accuracy 等噪声
+other = [(k, acc[k]) for k in OTHER if k in acc]
+if other:
+    lines.append("-" * 40)
+    lines.append("  其它(非数学, 不计入 MATH-AVG):")
+    for k, v in other:
+        lines.append(f"    {k:<12} {v*100:6.2f}")
+
+out = "\n".join(lines)
+print(out)
+with open(summary_path, "w") as f:
+    f.write(out + "\n")
+print(f"\n已写入: {summary_path}")
+PY
+    else
+        echo "警告: 未找到评测日志 $EVAL_LOG，跳过汇总"
+    fi
 fi
 
 echo ""
