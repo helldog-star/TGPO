@@ -75,11 +75,12 @@ def read_jsonl(path):
                 yield json.loads(line)
 
 
-def build_llm(model_path, tp, gpu_mem, max_len, seed, dtype):
+def build_llm(model_path, tp, gpu_mem, max_len, seed, dtype, max_logprobs=None):
     from vllm import LLM
 
-    log(f"加载模型: {model_path} (tp={tp}, gpu_mem={gpu_mem}, max_len={max_len}, dtype={dtype})")
-    return LLM(
+    log(f"加载模型: {model_path} (tp={tp}, gpu_mem={gpu_mem}, max_len={max_len}, "
+        f"dtype={dtype}, max_logprobs={max_logprobs})")
+    kw = dict(
         model=model_path,
         tensor_parallel_size=tp,
         gpu_memory_utilization=gpu_mem,
@@ -89,6 +90,10 @@ def build_llm(model_path, tp, gpu_mem, max_len, seed, dtype):
         seed=seed,
         enforce_eager=False,
     )
+    if max_logprobs is not None:
+        # vLLM 默认 max_logprobs=20; 取 top-100 覆盖率必须放开
+        kw["max_logprobs"] = int(max_logprobs)
+    return LLM(**kw)
 
 
 def as_token_prompts(id_lists):
@@ -244,6 +249,95 @@ def mode_score(args):
                 "tok_logp": tok_logp, "topk_ids": topk_ids, "topk_logp": topk_lp,
             }, ensure_ascii=False) + "\n")
     log(f"已写打分: {out_path}")
+
+
+# ----------------------------- coverage -----------------------------
+def _extract_text(field):
+    """从 messages-like 字段(ndarray/list of {'content':...})取纯文本。"""
+    if isinstance(field, np.ndarray):
+        field = field.tolist()
+    if isinstance(field, list) and field and isinstance(field[0], dict):
+        return "\n".join(str(m.get("content", "")) for m in field)
+    return str(field)
+
+
+def mode_coverage(args):
+    """纯推理测 teacher 的 top-k 累积概率质量(coverage@k), 回答 forward-KL top-k 丢了多少尾部质量。
+    上下文来源: 优先 --rollouts(student 序列, 与训练同口径); 否则用 parquet 的 target(参考解), 免生成。"""
+    from vllm import SamplingParams
+
+    seqs, plens = [], []
+    roll_path = args.rollouts or os.path.join(args.out_dir, f"rollouts_{args.student_tag}.jsonl")
+    if os.path.exists(roll_path):
+        log(f"coverage 上下文来自 rollouts: {roll_path}")
+        for r in read_jsonl(roll_path):
+            resp = r["resp_token_ids"][: args.max_score_tokens]
+            seq = (r["prompt_token_ids"] + resp)[: args.max_len]
+            plen = min(len(r["prompt_token_ids"]), len(seq))
+            seqs.append(seq); plens.append(plen)
+    else:
+        from transformers import AutoTokenizer
+        tok = AutoTokenizer.from_pretrained(args.prompt_tokenizer or args.model, trust_remote_code=True)
+        log(f"无 rollouts, 用 parquet 的 target(参考解)当续写(免生成): {args.parquet}")
+        prompts = load_prompts_from_parquet(args.parquet, tok, args.num_prompts, args.seed, args.max_prompt_len)
+        import pandas as pd
+        df = pd.read_parquet(args.parquet)   # pid = 行的位置索引(load_prompts 用 iloc 取样)
+        for p in prompts:
+            pid = p["pid"]
+            tgt = df.iloc[pid]["target"] if "target" in df.columns else ""
+            resp_ids = tok(_extract_text(tgt), add_special_tokens=False).input_ids[: args.max_score_tokens]
+            seq = (p["prompt_token_ids"] + resp_ids)[: args.max_len]
+            plen = min(len(p["prompt_token_ids"]), len(seq))
+            seqs.append(seq); plens.append(plen)
+    log(f"待测序列 {len(seqs)} 条")
+
+    K = args.topk
+    llm = build_llm(args.model, args.tp, args.gpu_mem, args.max_len, args.seed, args.dtype, max_logprobs=K + 1)
+    sp = SamplingParams(temperature=0.0, max_tokens=1, prompt_logprobs=K)
+    outs = llm.generate(as_token_prompts(seqs), sp)
+
+    ks = [k for k in [1, 5, 10, 20, 50, 100, K] if k <= K]
+    ks = sorted(set(ks))
+    cover = {k: [] for k in ks}     # 每位置 top-k 累积质量
+    trunc_ent = []                  # top-K 截断熵(nats)
+    for seq, plen, out in zip(seqs, plens, outs):
+        pl = out.prompt_logprobs
+        if pl is None:
+            continue
+        for pos in range(plen, len(seq)):
+            d = pl[pos] if pos < len(pl) and pl[pos] is not None else None
+            if not d:
+                continue
+            probs = np.sort(np.exp(np.array([v.logprob for v in d.values()], dtype=float)))[::-1]
+            csum = np.cumsum(probs)
+            for k in ks:
+                cover[k].append(float(csum[min(k, len(csum)) - 1]))
+            p = probs[:K]; p = p / p.sum()
+            trunc_ent.append(float(-(p * np.log(p + 1e-12)).sum()))
+
+    def stat(x):
+        a = np.array(x, dtype=float)
+        return {"mean": float(a.mean()), "median": float(np.median(a)),
+                "p5": float(np.percentile(a, 5)), "p95": float(np.percentile(a, 95))} if a.size else {}
+
+    report = {
+        "model": args.model, "model_tag": args.model_tag, "topk_max": K,
+        "n_seq": len(seqs), "n_positions": len(cover.get(ks[-1], [])),
+        "coverage": {f"top{k}": stat(cover[k]) for k in ks},
+        "frac_top100_below_0.9": float(np.mean(np.array(cover.get(100, cover[ks[-1]])) < 0.9))
+        if cover.get(100, cover[ks[-1]]) else float("nan"),
+        "trunc_entropy_topk": stat(trunc_ent),
+    }
+    out_json = os.path.join(args.out_dir, f"coverage_{args.model_tag}.json")
+    with open(out_json, "w") as f:
+        json.dump(report, f, ensure_ascii=False, indent=2)
+    log(f"已写覆盖率: {out_json}")
+    log("coverage@k (mean):")
+    for k in ks:
+        log(f"  top{k:<4}: {report['coverage'][f'top{k}']['mean']:.4f} "
+            f"(median {report['coverage'][f'top{k}']['median']:.4f})")
+    if not math.isnan(report["frac_top100_below_0.9"]):
+        log(f"  尾部重(top100<0.9 的位置占比): {report['frac_top100_below_0.9']:.3f}")
 
 
 # ----------------------------- aggregate -----------------------------
@@ -462,7 +556,7 @@ def _make_plots(out_dir, report):
 # ----------------------------- CLI -----------------------------
 def build_argparser():
     p = argparse.ArgumentParser(description="离线量化师生策略分歧")
-    p.add_argument("--mode", required=True, choices=["generate", "score", "aggregate"])
+    p.add_argument("--mode", required=True, choices=["generate", "score", "aggregate", "coverage"])
     p.add_argument("--model", default="", help="模型路径(generate/score)")
     p.add_argument("--model-tag", default="", help="模型短标签(用于文件名)")
     p.add_argument("--out-dir", required=True)
@@ -503,6 +597,10 @@ def main():
         if not args.model or not args.model_tag:
             sys.exit("score 需 --model 与 --model-tag")
         mode_score(args)
+    elif args.mode == "coverage":
+        if not args.model or not args.model_tag:
+            sys.exit("coverage 需 --model 与 --model-tag")
+        mode_coverage(args)
     else:
         if not args.teacher_tags:
             sys.exit("aggregate 需 --teacher-tags")

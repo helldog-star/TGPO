@@ -133,6 +133,27 @@ worker 的 teacher-forcing 完全同口径），因此指标可比、可对齐�
 
 ---
 
+## 附:top-k 覆盖率测试（`--mode coverage`，纯推理，不用训练）
+
+回答「forward-KL top-k（训练默认 `algorithm.topk_k=100`）在 teacher top-5/10/100 上覆盖了多少概率质量、
+尾部丢了多少」。原理：vLLM `prompt_logprobs` 是全词表 log-softmax，`exp(logp)` 即真概率，
+逐位置累加 top-k 概率即 coverage@k。
+
+```bash
+# 有 student rollouts 就在其上测(同训练口径); 没有则自动用 parquet 的 target(参考解), 免生成
+python measure_divergence.py --mode coverage \
+  --model /path/Qwen3-30B-A3B-Thinking-2507-aligned --model-tag teacher30b \
+  --tp 4 --topk 100 --out-dir divergence_out \
+  --parquet ../data/openr1.parquet --prompt-tokenizer /path/Qwen2.5-Math-1.5B-aligned \
+  --num-prompts 128
+```
+
+- **注意**：vLLM 默认 `max_logprobs=20`，脚本会自动按 `--topk` 放开到 100+（`LLM(max_logprobs=K+1)`）。
+- 产物 `coverage_<tag>.json`：`coverage.top{1,5,10,20,50,100}` 的 mean/median/p5/p95、
+  `frac_top100_below_0.9`（尾部重的位置占比）、`trunc_entropy_topk`。
+- 读法：若 top100 覆盖 ≈0.95、`frac_top100_below_0.9` 很小 → 训练 top-100 截断几乎无损；
+  若覆盖偏低 → forward-KL 丢了可观尾部质量，可加大 `K` 或改看 reverse（student top-k 支撑）。
+
 ## 常见延伸
 
 - **沿训练演化**：把 `STUDENT_PATH` 指向某个 `global_step_N/actor_hf`（用 `run_merge_eval.sh` 合出来的
