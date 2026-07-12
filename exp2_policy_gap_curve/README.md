@@ -1,102 +1,141 @@
-# 实验② Policy Gap Curve（teacher–student 分歧 vs 方法鲁棒性）
+# 师生策略分歧量化（Teacher–Student Policy Divergence）
 
-## 目标与论点
-横轴 = teacher 与 student 的初始 policy gap，纵轴 = 蒸馏后 student 的下游表现。
-画三条曲线 **TGPO / KDRL / OP Distill(RKL)**，论证：
+回应 reviewer：*"quantify teacher-student policy divergence directly — teacher perplexity on
+student rollouts, token-level KL, top-k overlap, density-ratio statistics, EOS/length distribution."*
 
-> gap 增大时 KDRL、OP Distill 崩（性能掉到 base 以下、length explosion），
-> 而 TGPO 在同样的 teacher、同样的 gap 下仍稳健提升。
+一条离线流水线：**student 采样 rollout → 三个模型对同一串 token 做 teacher-forcing 打分 →
+汇总全部分歧指标（表 + 图 + json）**。默认三模型：
 
-这条曲线是论文「large policy divergence」主张的核心实证图。
+| 角色 | 模型 | 预期 gap |
+|---|---|---|
+| student | Qwen2.5-Math-1.5B | — |
+| teacher（小 gap） | Qwen2.5-Math-7B | 小 |
+| teacher（大 gap） | Qwen3-30B-A3B-Thinking | 大 |
 
----
-
-## 横轴：用「测量值」而不是「teacher 标签」
-
-x 轴用 **step-1 实测的逐 token 反向 KL（k1 估计量）**：
-`gap/reverse_kl_k1 = E_{y~π_θ}[log π_θ(y) − log π_T(y)]`
-辅以 `gap/mismatch_ratio`（teacher argmax ≠ student 采样 token 的逐 token 占比，ρ>1 的代理）。
-
-- 这两个指标已在 `mix_trainer.py`（fit loop，union old_log_prob 之后）以**方法无关**的方式埋点：
-  teacher worker 两条分支恒返回 `teacher_log_prob` / `teacher_predict_ids`，故 KDRL/RKL/TGPO 同口径。
-- 每步都写 wandb（`gap/reverse_kl_k1`、`gap/mismatch_ratio`），并在 step≤1 打印 `[EXP2-GAP]` 便于 grep。
-- **取 step-1 的值作为该 (student, teacher) 点的 x 坐标**（此时 student 尚未被任一方法更新，三条 run 的 x 应一致，可互相交叉验证）。
-
-> 为什么用 reverse KL 而非 teacher 大小/家族标签：把「哪个 teacher」这一类别变量，换成连续、可比、且正是 OPD 所优化的那个量。x 轴自然单调，无需预设 teacher 顺序。
+论点抓手：**30B 在每个分歧指标上都应显著大于 7B**，正面支撑论文「large policy divergence」主张。
 
 ---
 
-## Teacher 阶梯（student = Qwen2.5-Math-7B）
+## 文件
 
-**硬约束：teacher 必须与 student 共享同一套 BPE 词表**（`data/align_tokenizer.py` 只做
-vocab padding 到 `max(vocab)` + 统一特殊 token，不是跨 tokenizer 重映射）。
-→ 阶梯锁在 **Qwen 系 tokenizer** 内；Llama/Mistral/Gemma 出局。
+| 文件 | 作用 |
+|---|---|
+| `run_divergence.sh` | 一键驱动：generate → score → aggregate |
+| `measure_divergence.py` | 工作脚本，三模式：`generate` / `score` / `aggregate` |
+| `divergence_out/`（默认输出目录） | 所有中间产物与最终汇总 |
 
-按预期 gap 从小到大（实际顺序以实测 x 为准）：
-
-| # | Teacher | 与 student 关系 | 预期 gap | 备注 |
-|---|---------|----------------|----------|------|
-| 1 | Qwen2.5-Math-7B-Instruct | 同 base 同 size，短 CoT | 最小 | 近同分布 |
-| 2 | Qwen2.5-7B-Instruct（或 Qwen2.5-Math-72B-Instruct） | 同族，通用/更大 | 小–中 | 风格/规模差 |
-| 3 | DeepSeek-R1-Distill-Qwen-7B | Qwen2.5 底座，长 CoT 蒸馏 | 中–大 | 进入长思考分布 |
-| 4 | DeepSeek-R1-Distill-Qwen-32B（或 QwQ-32B） | 更大长 CoT | 大 | 32B dense，param_offload |
-| 5 | Qwen3-30B-A3B-Thinking-2507 | 新一代 + MoE + 重思考 | 最大 | 现有主 teacher |
-
-- **最小可行 = 3 点**（#1, #3, #5）；推荐 4–5 点。
-- 每个 teacher 需先用 `align_tokenizer.py` 对齐到 student 词表/特殊 token。
-  **为保证 student 跨点逐字节一致**：把 student 一次性 pad 到整条阶梯的全局 max vocab，
-  各 teacher 复用同一份 `student-aligned`；用脚本末尾打印的对齐诊断表核对 vocab/eos 一致。
-- 32B/72B teacher 用 `teacher_ref.fsdp_config.param_offload=True` 放 CPU；注意单节点内存。
+> 训练时的 `gap/reverse_kl_k1`、`gap/mismatch_ratio`（wandb，见 `mix_trainer.py` 的 `[EXP2-GAP]`
+> 探针）是**在线**版本，随任何开了 teacher 的训练 run 自动记录；本目录是**离线**版本，
+> 覆盖 reviewer 要的全部 5 类指标，且可对任意 checkpoint / 模型对做。两者互补。
 
 ---
 
-## 固定量 / 混杂控制（写进论文 setup）
+## 前置条件（硬约束）
 
-跨所有点、所有方法严格固定：
-- **同一份 prompt 集**（不要按 teacher 重新筛）。当前 `openr1.a3b_correct_35k` 是按 A3B 答对筛的，
-  略偏向 A3B；可在附录用 teacher-中立 prompt 集（全量 OpenR1/MATH 子集）做鲁棒性复现。
-- 同一 student 初始化、同样 batch/lr/steps/采样温度/熵系数。
-- 三方法各用**自己标准的 recipe**（TGPO: coef=2e-3 + decay=1e-5 退火；KDRL/RKL 各自标准），
-  且该 recipe 跨 gap 不变 —— 即「每个方法以其最佳设定」公平比。
-
-**混杂杀手**：TGPO 用的是和 KDRL/OPD **完全相同的 teacher、相同的实测 gap**。
-若 TGPO 在 OPD/KDRL 崩掉的高 gap 点仍提升，则说明 teacher 本身不是「差」，
-差的是各方法对 gap 的处理 —— 这正是要论证的点。
+1. **共享词表**：token 级 KL / top-k overlap 只在同一套 BPE 词表下成立。三个模型必须是
+   `data/align_tokenizer.py` 产出的 `*-aligned` 版本（pad 到统一 vocab + 对齐特殊 token）。
+   脚本在 `score` 阶段会自检：若序列里最大 token id ≥ 模型 `vocab_size` 直接报错。
+2. **vLLM 环境**：在训练用的 conda 环境（本仓库 `config/env.sh` 默认 `tgpo`；集群上是 `luffy`）里跑。
+3. **显存**：Qwen3-30B-A3B（MoE）bf16 约 60GB，24G 卡需 `T30B_TP>=4`。1.5B/7B 单卡即可。
 
 ---
 
-## 纵轴与作图
+## 快速开始
 
-- **主图**：best/final 平均准确率 vs gap，三条曲线（用论文 eval 套件 AIME24/25, AMC, MATH500, Minerva, Olympiad）。
-- **凸显崩溃**：Δacc = final − base(student 起点)；OPD/KDRL 在大 gap 端转负，TGPO 近水平为正。
-- **诊断小图（很有说服力）**：训练末期 reward vs gap、response length vs gap（OPD 的 length explosion）。
-  reward/length 直接取各 run 的 wandb 末段；x 仍用 `gap/reverse_kl_k1`。
+```bash
+cd /mnt/lxy/TGPO/exp2_policy_gap_curve
 
----
+# 改成你 align 后的真实路径；其余用默认
+STUDENT_PATH=/path/Qwen2.5-Math-1.5B-aligned \
+T7B_PATH=/path/Qwen2.5-Math-7B-aligned \
+T30B_PATH=/path/Qwen3-30B-A3B-Thinking-2507-aligned \
+T30B_TP=4 \
+bash run_divergence.sh
+```
 
-## Run 矩阵与算力
+分阶段跑（调试或复算）：
 
-3 方法 × 5 teacher = **15 run**（7B headline）。
-- OPD/KDRL 在大 gap 端早崩 → 可 `trainer.total_training_steps=150` 早停省算力；TGPO 跑满 300。
-- 1.5B 作附录鲁棒性（再 15 run，预算够再加；本机不足以跑，需上集群）。
-
----
-
-## 操作步骤
-
-1. **对齐 teacher**：对阶梯里每个 teacher 跑 `data/align_tokenizer.py --student <Qwen2.5-Math-7B> --teacher <T>`，
-   得到 `<T>-aligned`；核对诊断表 vocab/eos 与 student 一致。
-2. **填 teacher 路径**：编辑 `run_gap_curve.sh` 顶部 `TEACHERS` 数组（tag→aligned 路径）。
-3. **跑扫描**：`bash exp2_policy_gap_curve/run_gap_curve.sh`（单节点顺序跑；或自行拆分到多节点）。
-4. **取 x 轴**：每个 run 日志 grep `[EXP2-GAP] step=1`，或读 wandb `gap/reverse_kl_k1`（step 1）。
-   同一 teacher 三方法的 x 应一致 → 取均值/任一。
-5. **取 y 轴**：各 run 的 eval 准确率（best/final）；诊断图取末段 reward/length。
-6. **画图**：x=`gap/reverse_kl_k1`，三条曲线 + Δacc + 诊断小图。
+```bash
+STAGE=generate  bash run_divergence.sh   # 只采样 + 独立生成
+STAGE=score     bash run_divergence.sh   # 只打分（需已有 rollouts）
+STAGE=aggregate bash run_divergence.sh   # 只汇总（不加载模型，秒级）
+```
 
 ---
 
-## Caveats
-- top-k 截断不影响本实验 x 轴（k1 用的是采样 token 的 full logp，非 top-k）。
-- mismatch_ratio 与 reverse_kl_k1 通常同序但不完全单调；正式 x 轴用 reverse_kl_k1。
-- 若某 teacher 的 reverse_kl_k1 与预期阶梯顺序不符，以实测为准重排 x（曲线本就按实测 x 画）。
-- OPD/KDRL 早停点要在论文里说明（避免「跑得短所以差」的质疑）：报告 best-over-training，而非固定步。
+## 可配置项（环境变量）
+
+| 变量 | 默认 | 说明 |
+|---|---|---|
+| `STUDENT_PATH` / `T7B_PATH` / `T30B_PATH` | dolphinfs 上的 aligned 路径 | 三个模型（**必改**成你的真实路径） |
+| `STUDENT_TP` / `T7B_TP` / `T30B_TP` | 1 / 1 / 4 | 张量并行 |
+| `PARQUET` | `data/openr1.parquet` | prompt 来源；**建议 teacher-中立集**，勿用 `openr1.a3b_correct_35k`（偏 teacher，低估 gap） |
+| `NUM_PROMPTS` | 256 | 抽样 prompt 数 |
+| `N_SAMPLES` | 8 | 每 prompt rollout 数（对齐训练 n=8） |
+| `TEMPERATURE` | 1.0 | rollout 温度（对齐训练 rollout 温度，量的是被正则的那个分布） |
+| `MAX_TOKENS` | 8192 | 生成最大长度 |
+| `MAX_SCORE_TOKENS` | 4096 | 每条 response 打分的最大 token 数（控显存/时长） |
+| `TOPK` | 20 | `prompt_logprobs` 的 k（top-k overlap / 截断 KL 用） |
+| `MAX_LEN` | 10240 | vLLM `max_model_len`，需 ≥ prompt+response |
+| `SEED` | 1234 | 抽样与采样种子（可复现） |
+| `OUT_DIR` | `exp2_policy_gap_curve/divergence_out` | 输出目录 |
+| `STAGE` | all | `all` / `generate` / `score` / `aggregate` |
+
+---
+
+## 流程（run_divergence.sh 内部）
+
+```
+generate student   → prompts.jsonl（用 student tokenizer 统一构造 prompt ids）
+                     + rollouts_student.jsonl（student 采样序列）
+generate teacher7b → gensummary_teacher7b.json（独立生成，测长度/EOS）
+generate teacher30b→ gensummary_teacher30b.json
+score    student   → scores_student.jsonl（student 自打分：logp + top-k）
+score    teacher7b → scores_teacher7b.jsonl（teacher-forcing 在 student 序列上）
+score    teacher30b→ scores_teacher30b.jsonl
+aggregate          → divergence_summary.{json,md} + plots/
+```
+
+关键：**所有打分都在「student 的同一串 prompt+response token ids」上做**（与训练里 teacher
+worker 的 teacher-forcing 完全同口径），因此指标可比、可对齐、可算逐 token KL。
+
+---
+
+## 产物说明（`divergence_out/`）
+
+| 文件 | 内容 |
+|---|---|
+| `prompts.jsonl` | 抽样 prompt（pid、data_source、prompt_token_ids）；全流程共享 |
+| `rollouts_<tag>.jsonl` | 各模型生成序列（token ids、长度、finish_reason） |
+| `gensummary_<tag>.json` | 各模型长度/EOS 汇总 + 长度直方图 |
+| `scores_<tag>.jsonl` | 各模型逐 token：实际 token logp + top-k ids/logp |
+| **`divergence_summary.md`** | **人看的主表**（下面各指标 + 95% CI） |
+| `divergence_summary.json` | 机器可读的完整结果 |
+| `plots/divergence_bars.png` | reverse_kl_k1 / mismatch_ratio 条形图 |
+| `plots/length_dist.png` | 三模型生成长度分布 |
+
+---
+
+## 指标定义（都在 student rollouts 上，按 prompt bootstrap 95% CI）
+
+| 指标 | 定义 | 读法 |
+|---|---|---|
+| `teacher_ppl` | `exp(−mean_t logπ_T(a_t))` | teacher 对学生文本的困惑度；越高=分歧越大 |
+| `reverse_kl_k1` | `mean_t [logπ_θ(a_t) − logπ_T(a_t)]` | 反向 KL 的单样本无偏估计（=训练 `gap/reverse_kl_k1` 口径）|
+| `reverse_kl_topk` / `forward_kl_topk` | 在两侧 top-k 并集支撑上的截断 KL，`D(π_θ‖π_T)` / `D(π_T‖π_θ)` | 低方差近似，双向都给 |
+| `mismatch_ratio` | `mean_t 1[teacher_top1 ≠ a_t]` | top-1 不一致率（=训练 `gap/mismatch_ratio` 口径）|
+| `top1/top5/top10_overlap` | `mean_t |topk_T ∩ topk_θ| / k` | 支撑集重合度 |
+| density-ratio | `logρ=logπ_θ−logπ_T` 的 mean/std/p5/p50/p95、`frac_rho_gt1` | 分布形态；`frac_rho_gt1`=学生比老师更自信的 token 占比 |
+| 长度/EOS | 各模型 `len_mean/median/p95`、`trunc_rate`、`stop_rate` | OPD/KDRL 的 length explosion 靠这个坐实 |
+
+**方法学注意**：CI 按 prompt 而非 token 做 bootstrap（同一条回答内 token 相关，按 token 会虚低）；
+`reverse_kl_k1` 是精确的 on-policy 估计，`*_kl_topk` 是 top-k 截断近似（标注清楚即可）。
+
+---
+
+## 常见延伸
+
+- **沿训练演化**：把 `STUDENT_PATH` 指向某个 `global_step_N/actor_hf`（用 `run_merge_eval.sh` 合出来的
+  HF 权重），重跑即可得到「分歧随训练收窄」的曲线。
+- **跨方法对比**：对 tgpo / rkl / kdrl 各自的 checkpoint 分别跑，横比同一分歧指标。
+- **鲁棒性**：主结果用训练 prompt，附录再用 teacher-中立集（MATH/OpenR1 未筛子集）复现，证明结论非筛选所致。
