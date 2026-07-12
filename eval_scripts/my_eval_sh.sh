@@ -7,7 +7,7 @@ setup_all_env
 which conda
 which python
 
-# 支持通过环境变量覆盖，便于 run_train_merge_eval.sh 等脚本调用
+# 支持通过环境变量覆盖，便于 run_merge_eval.sh 等脚本调用
 ROOT=${ROOT:-/mnt/dolphinfs/ssd_pool/docker/user/hadoop-nlp-sh02/hadoop-aipnlp/FMG/liuxinyu67/luffy}
 DATA=${DATA:-$ROOT/data/valid.all.parquet}
 OUTPUT_DIR=${OUTPUT_DIR:-$ROOT/luffy/eval_results/sh_train_qwen3_dpscaler_grpo_1kq_8kr_step300}
