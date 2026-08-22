@@ -481,18 +481,21 @@ class MIXActorRolloutRefWorker(Worker):
         with self.ulysses_sharding_manager:
             data = self.ulysses_sharding_manager.preprocess_data(data)
 
-            # reverse-KL top-k: 支撑取 student(π_θ_old) 的 top-k(mode-seeking 该按 student 加权),
-            # 这里额外产出 student_topk_ids, 供 teacher 在这些 id 上取 logp。
+            # reverse-KL top-k / OPD Eq.6 centering: 支撑取 student(π_θ_old) 的 top-k,
+            # 这里额外产出 student_topk_ids + true log π_θ, 供 teacher 在这些 id 上取 logp。
             reverse_topk = (data.meta_info.get("use_tgpo_topk_kl", False)
                             and data.meta_info.get("tgpo_kl_direction", "forward") == "reverse")
-            if reverse_topk:
+            opd_center = data.meta_info.get("adv_estimator") == "rkl_centered"
+            if reverse_topk or opd_center:
                 topk_k = int(data.meta_info["topk_k"])
-                old_log_probs, entropys, student_topk_ids, _student_topk_logits = self.actor.compute_log_prob_w_topk(
-                    data=data, calculate_entropy=True, topk_k=topk_k,
-                )
+                old_log_probs, entropys, student_topk_ids, _student_topk_logits, student_topk_log_probs = \
+                    self.actor.compute_log_prob_w_topk(
+                        data=data, calculate_entropy=True, topk_k=topk_k,
+                    )
                 output = DataProto.from_dict(
                     tensors={"old_log_probs": old_log_probs, "entropys": entropys,
-                             "student_topk_ids": student_topk_ids},
+                             "student_topk_ids": student_topk_ids,
+                             "student_topk_log_probs": student_topk_log_probs},
                     meta_info={"temperature": self.config.rollout.temperature},
                 )
             else:
@@ -555,10 +558,11 @@ class MIXActorRolloutRefWorker(Worker):
             adv_estimator = data.meta_info.get("adv_estimator", None)
             use_tgpo_topk_kl = data.meta_info.get("use_tgpo_topk_kl", False)
             kl_direction = data.meta_info.get("tgpo_kl_direction", "forward")
-            if use_tgpo_topk_kl and kl_direction == "reverse":
-                # reverse-KL top-k: 支撑 = student(π_θ_old) top-k(student worker 已产出 student_topk_ids)。
-                # teacher 在这些 student id 上取 logp;放进 teacher_topk_ids/teacher_topk_logits 两个键,
-                # 下游 actor/loss 无需改动(loss 里 log_softmax 会把这些 logp 在支撑上重归一化)。
+            opd_center = adv_estimator == "rkl_centered"
+            if (use_tgpo_topk_kl and kl_direction == "reverse") or opd_center:
+                # student top-k 支撑: reverse-KL 正则 与 OPD Eq.6 centering 共用这条路径。
+                # teacher 在 student top-k ids 上取 full-vocab logp, 写入 teacher_topk_logits
+                # (对 reverse-KL, loss 里 log_softmax 会在支撑上重归一化; Eq.6 直接用这些 logp)。
                 data.batch["teacher_topk_ids"] = data.batch["student_topk_ids"]      # gather 支撑 = student top-k
                 data.batch["teacher_predict_ids"] = data.batch["responses"]         # 占位(reverse 忽略 CE 输出)
                 log_probs, entropys, teacher_topk_logp = self.teacher_ref_policy.compute_logp_and_topk_at_ids(
@@ -577,11 +581,12 @@ class MIXActorRolloutRefWorker(Worker):
                 )
             elif use_tgpo_topk_kl:
                 topk_k = int(data.meta_info["topk_k"])
-                log_probs, entropys, teacher_topk_ids, teacher_topk_logits = self.teacher_ref_policy.compute_log_prob_w_topk(
-                    data=data,
-                    calculate_entropy=True,
-                    topk_k=topk_k,
-                )
+                log_probs, entropys, teacher_topk_ids, teacher_topk_logits, _teacher_topk_logp = \
+                    self.teacher_ref_policy.compute_log_prob_w_topk(
+                        data=data,
+                        calculate_entropy=True,
+                        topk_k=topk_k,
+                    )
                 predict_ids = teacher_topk_ids[..., 0]
                 response_length = data.batch["responses"].size(1)
                 attention_mask = data.batch["attention_mask"][:, -response_length-1:-1]

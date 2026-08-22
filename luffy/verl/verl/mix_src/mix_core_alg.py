@@ -475,6 +475,44 @@ def compute_rkl_advantage(
     return scores, scores
 
 
+def compute_opd_centered_advantage(
+    old_log_probs: torch.Tensor,
+    teacher_log_prob: torch.Tensor,
+    response_mask: torch.Tensor,
+    student_topk_log_probs: torch.Tensor,
+    teacher_topk_log_probs: torch.Tensor,
+) -> tuple[torch.Tensor, torch.Tensor, dict]:
+    """OPD² Eq.(6): convert the sampled-token OPD reward into an advantage.
+
+    R_t(y_t) = log π*(y_t) - log π_θ(y_t)                         # Eq.(2)
+    A_t      = R_t(y_t) - E_{ỹ ~ π_θ}[R_t(ỹ)]                     # Eq.(6)
+
+    The expectation is the paper's top-k approximation (default k=1024):
+
+        E[R] ≈ Σ_{v ∈ TopK(π_θ)} π_θ(v) (log π*(v) - log π_θ(v))
+
+    using the *true* student probabilities (not renormalized over the top-k
+    support). `teacher_topk_log_probs` / `student_topk_log_probs` must be
+    full-vocab log-probs gathered at the same student top-k ids.
+    """
+    with torch.no_grad():
+        reward = (teacher_log_prob - old_log_probs) * response_mask
+        student_logp_k = student_topk_log_probs.float()
+        teacher_logp_k = teacher_topk_log_probs.float()
+        student_p_k = student_logp_k.exp()
+        reward_k = teacher_logp_k - student_logp_k
+        baseline = (student_p_k * reward_k).sum(dim=-1)
+        advantages = (reward - baseline) * response_mask
+        topk_mass = student_p_k.sum(dim=-1)
+        metrics = {
+            "opd/reward_mean": verl_F.masked_mean(reward, response_mask).detach().item(),
+            "opd/baseline_mean": verl_F.masked_mean(baseline, response_mask).detach().item(),
+            "opd/advantage_mean": verl_F.masked_mean(advantages, response_mask).detach().item(),
+            "opd/topk_mass_mean": verl_F.masked_mean(topk_mass, response_mask).detach().item(),
+        }
+    return advantages, advantages, metrics
+
+
 # 所有tok grpo adv + teacher rkl [👎]
 def compute_grpo_merge_rkl_advantage(token_level_rewards: torch.Tensor,
                                     eos_mask: torch.Tensor,

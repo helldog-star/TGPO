@@ -496,9 +496,13 @@ class MIXDataParallelPPOActor(DataParallelPPOActor):
                         predict_ids_rmpad = torch.argmax(logits_rmpad, dim=-1) # (total_nnz,)
                 topk_ids_rmpad = None
                 topk_logits_rmpad = None
+                topk_logp_rmpad = None
                 if return_topk:
                     topk_k = min(topk_k, logits_rmpad.size(-1))
                     topk_logits_rmpad, topk_ids_rmpad = torch.topk(logits_rmpad, k=topk_k, dim=-1)
+                    # true log π_θ(v) on the top-k support (logit/T - logZ_full)
+                    logZ_rmpad = torch.logsumexp(logits_rmpad, dim=-1, keepdim=True)
+                    topk_logp_rmpad = topk_logits_rmpad - logZ_rmpad
 
                 # gather log_prob if sp > 1
                 if self.use_ulysses_sp:
@@ -513,6 +517,8 @@ class MIXDataParallelPPOActor(DataParallelPPOActor):
                     if return_topk and topk_ids_rmpad is not None and topk_logits_rmpad is not None:
                         topk_ids_rmpad = gather_outpus_and_unpad(topk_ids_rmpad, gather_dim=0, unpad_dim=0, padding_size=pad_size)
                         topk_logits_rmpad = gather_outpus_and_unpad(topk_logits_rmpad, gather_dim=0, unpad_dim=0, padding_size=pad_size)
+                        if topk_logp_rmpad is not None:
+                            topk_logp_rmpad = gather_outpus_and_unpad(topk_logp_rmpad, gather_dim=0, unpad_dim=0, padding_size=pad_size)
 
                 # pad back to (bsz, seqlen)
                 full_entropy = pad_input(hidden_states=entropy_rmpad.unsqueeze(-1),
@@ -529,9 +535,11 @@ class MIXDataParallelPPOActor(DataParallelPPOActor):
                     full_predict_ids = pad_input(hidden_states=predict_ids_rmpad.unsqueeze(-1), indices=indices, batch=batch_size, seqlen=seqlen)
                 full_topk_ids = None
                 full_topk_logits = None
+                full_topk_logp = None
                 if return_topk:
                     full_topk_ids = pad_input(hidden_states=topk_ids_rmpad, indices=indices, batch=batch_size, seqlen=seqlen)
                     full_topk_logits = pad_input(hidden_states=topk_logits_rmpad, indices=indices, batch=batch_size, seqlen=seqlen)
+                    full_topk_logp = pad_input(hidden_states=topk_logp_rmpad, indices=indices, batch=batch_size, seqlen=seqlen)
                     
                 # only return response part:
                 entropy = full_entropy.squeeze(-1)[:, -response_length - 1:-1]  # (bsz, response_length)
@@ -542,9 +550,11 @@ class MIXDataParallelPPOActor(DataParallelPPOActor):
                     predict_ids = full_predict_ids.squeeze(-1)[:, -response_length - 1:-1]
                 topk_ids = None
                 topk_logits = None
+                topk_logp = None
                 if return_topk:
                     topk_ids = full_topk_ids[:, -response_length - 1:-1]
                     topk_logits = full_topk_logits[:, -response_length - 1:-1]
+                    topk_logp = full_topk_logp[:, -response_length - 1:-1]
 
             else:  # not using rmpad and no ulysses sp
                 output = self.actor_module(input_ids=input_ids,
@@ -569,17 +579,19 @@ class MIXDataParallelPPOActor(DataParallelPPOActor):
                         predict_ids = torch.argmax(logits, dim=-1) # (bs, response_len)
                 topk_ids = None
                 topk_logits = None
+                topk_logp = None
                 if return_topk:
                     topk_k = min(topk_k, logits.size(-1))
                     topk_logits, topk_ids = torch.topk(logits, k=topk_k, dim=-1)
+                    topk_logp = topk_logits - torch.logsumexp(logits, dim=-1, keepdim=True)
 
             # return entropy, log_probs
             if return_ids and return_topk:
-                return entropy, log_probs, predict_ids, topk_ids, topk_logits
+                return entropy, log_probs, predict_ids, topk_ids, topk_logits, topk_logp
             elif return_ids:
                 return entropy, log_probs, predict_ids
             elif return_topk:
-                return entropy, log_probs, topk_ids, topk_logits
+                return entropy, log_probs, topk_ids, topk_logits, topk_logp
             else:
                 return entropy, log_probs
 
@@ -604,9 +616,10 @@ class MIXDataParallelPPOActor(DataParallelPPOActor):
         entropy_lst = []
         topk_ids_lst = []
         topk_logits_lst = []
+        topk_logp_lst = []
         for micro_batch in micro_batches:
             with torch.no_grad():
-                entropy, log_probs, topk_ids, topk_logits = self._forward_micro_batch(
+                entropy, log_probs, topk_ids, topk_logits, topk_logp = self._forward_micro_batch(
                     micro_batch,
                     temperature=temperature,
                     return_topk=True,
@@ -615,12 +628,14 @@ class MIXDataParallelPPOActor(DataParallelPPOActor):
             log_probs_lst.append(log_probs)
             topk_ids_lst.append(topk_ids)
             topk_logits_lst.append(topk_logits)
+            topk_logp_lst.append(topk_logp)
             if calculate_entropy:
                 entropy_lst.append(entropy)
 
         log_probs = torch.concat(log_probs_lst, dim=0)
         topk_ids = torch.concat(topk_ids_lst, dim=0)
         topk_logits = torch.concat(topk_logits_lst, dim=0)
+        topk_logp = torch.concat(topk_logp_lst, dim=0)
         entropys = None
         if calculate_entropy:
             entropys = torch.concat(entropy_lst, dim=0)
@@ -632,10 +647,11 @@ class MIXDataParallelPPOActor(DataParallelPPOActor):
             log_probs = log_probs[revert_indices]
             topk_ids = topk_ids[revert_indices]
             topk_logits = topk_logits[revert_indices]
+            topk_logp = topk_logp[revert_indices]
             if calculate_entropy:
                 entropys = entropys[revert_indices]
 
-        return log_probs, entropys, topk_ids, topk_logits
+        return log_probs, entropys, topk_ids, topk_logits, topk_logp
 
     def compute_logp_and_topk_at_ids(self, data: DataProto, calculate_entropy=False):
         """Return this model's log-prob at `responses`, and its full-vocab log-softmax

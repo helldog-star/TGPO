@@ -231,7 +231,7 @@ algorithm:
     kl_coef: 0.001
   grpo_use_std: True
   surprisal_base: 0.0
-  topk_k: 100                  # top-k KL(前向/反向共用)的 k, 供 use_tgpo_topk_kl / rkl_topk 使用
+  topk_k: 100                  # top-k KL / OPD Eq.6 centering 的 k; rkl_centered 论文默认 1024
 
 trainer:
   rejection_sample: False # Reject sample prompts that all succeed or all fail (0 signal for GRPO due to normalization).

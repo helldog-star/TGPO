@@ -165,6 +165,22 @@ def compute_advantage(data: DataProto, adv_estimator, gamma=1.0, lam=1.0, grpo_u
         )
         data.batch["advantages"] = advantages
         data.batch["returns"] = returns
+    elif adv_estimator == "rkl_centered":
+        responses = data.batch['responses']
+        response_length = responses.size(-1)
+        attention_mask = data.batch['attention_mask']
+        response_mask = attention_mask[:, -response_length:]
+        from .mix_core_alg import compute_opd_centered_advantage
+        advantages, returns, opd_metrics = compute_opd_centered_advantage(
+            old_log_probs=data.batch["old_log_probs"],
+            teacher_log_prob=data.batch["teacher_log_prob"],
+            response_mask=response_mask,
+            student_topk_log_probs=data.batch["student_topk_log_probs"],
+            teacher_topk_log_probs=data.batch["teacher_topk_logits"],
+        )
+        data.batch["advantages"] = advantages
+        data.batch["returns"] = returns
+        data.meta_info["opd_center_metrics"] = opd_metrics
     elif adv_estimator == "grpo_merge_rkl":
         token_level_rewards = data.batch['token_level_rewards']
         index = data.non_tensor_batch['uid']
@@ -313,6 +329,8 @@ class MIXRayPPOTrainer(RayPPOTrainer):
         elif self.config.algorithm.adv_estimator == 'reinforce_plus_plus':
             self.use_critic = False
         elif self.config.algorithm.adv_estimator == 'rkl':
+            self.use_critic = False
+        elif self.config.algorithm.adv_estimator == 'rkl_centered':
             self.use_critic = False
         elif self.config.algorithm.adv_estimator == 'grpo_merge_rkl':
             self.use_critic = False
@@ -677,7 +695,19 @@ class MIXRayPPOTrainer(RayPPOTrainer):
                                                   gamma=self.config.algorithm.gamma,
                                                   lam=self.config.algorithm.lam,
                                                   grpo_use_std=self.config.algorithm.grpo_use_std)
-                            
+                        if 'opd_center_metrics' in batch.meta_info:
+                            metrics.update(batch.meta_info['opd_center_metrics'])
+                        # Eq.6 只在 driver 上用 top-k 张量; actor 更新走普通 PPO, 可丢掉以省内存。
+                        # 若同时开了 reverse top-k KL 正则, 则 teacher_topk_* 还要留给 actor。
+                        if self.config.algorithm.adv_estimator == 'rkl_centered':
+                            keep_tgpo_topk = self.config.actor_rollout_ref.actor.get('use_tgpo_topk_kl', False)
+                            drop_keys = ['student_topk_ids', 'student_topk_log_probs']
+                            if not keep_tgpo_topk:
+                                drop_keys.extend(['teacher_topk_ids', 'teacher_topk_logits'])
+                            for _k in drop_keys:
+                                if _k in batch.batch.keys():
+                                    del batch.batch[_k]
+
                         # compute alpha and beta for prefix reward weighting
 
                         prefix_mask = batch.batch['prefix_mask']
